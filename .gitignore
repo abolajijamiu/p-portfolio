@@ -1,0 +1,13 @@
+node_modules
+dist
+.next
+.env
+.env.local
+.env.production
+
+# Claude Code memory
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
