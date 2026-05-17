@@ -36,6 +36,7 @@ export type CmsTheme = {
   deliveryNotes: string[]
   bgClass?: string | null
   accentColor?: string | null
+  checkoutUrl?: string | null
   demoStoreUrl?: string | null
   demoStoreNote?: string | null
   videoId?: string | null

@@ -70,6 +70,7 @@ export const cmsThemes = pgTable(
     deliveryNotes: jsonb('delivery_notes').$type<string[]>().default([]),
     bgClass: text('bg_class'),
     accentColor: text('accent_color'),
+    checkoutUrl: text('checkout_url'),
     demoStoreUrl: text('demo_store_url'),
     demoStoreNote: text('demo_store_note'),
     videoId: text('video_id'),

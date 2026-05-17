@@ -244,6 +244,7 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
     features: [] as CmsThemeFeature[],
     licenses: [] as CmsThemeLicense[],
     deliveryNotes: [] as string[],
+    checkoutUrl: '',
     demoStoreUrl: '',
     demoStoreNote: '',
     videoId: '',
@@ -267,6 +268,7 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
       features: theme.features ?? [],
       licenses: theme.licenses ?? [],
       deliveryNotes: theme.deliveryNotes ?? [],
+      checkoutUrl: theme.checkoutUrl ?? '',
       demoStoreUrl: theme.demoStoreUrl ?? '',
       demoStoreNote: theme.demoStoreNote ?? '',
       videoId: theme.videoId ?? '',
@@ -299,6 +301,7 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
         features: form.features,
         licenses: form.licenses,
         deliveryNotes: form.deliveryNotes,
+        checkoutUrl: form.checkoutUrl.trim() || null,
         demoStoreUrl: form.demoStoreUrl.trim() || null,
         demoStoreNote: form.demoStoreNote.trim() || null,
         videoId: form.videoId.trim() || null,
@@ -451,6 +454,13 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
               onChange={(v) => update('deliveryNotes', v)}
               placeholder="Shopify .zip + full source…"
             />
+          </section>
+
+          {/* Purchase */}
+          <section className="border border-border rounded-xl bg-white p-5 space-y-4">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Purchase</p>
+            <Input label="Checkout URL" value={form.checkoutUrl} onChange={(e) => update('checkoutUrl', e.target.value)} placeholder="https://buy.stripe.com/..." />
+            <p className="text-[11px] text-muted/60">Paste your Stripe, Gumroad, Lemon Squeezy, or Paystack link. The "Get this theme" button will link directly to it.</p>
           </section>
 
           {/* Demo store */}

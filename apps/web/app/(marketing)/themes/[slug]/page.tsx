@@ -89,13 +89,13 @@ export default async function ThemeDetailPage({ params }: Props) {
               >
                 Request demo
               </Link>
-              <Link
-                href="/contact"
+              <a
+                href={`/contact?theme=${theme.slug}&intent=purchase`}
                 className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
                 Get this theme
                 <ArrowRightIcon className="h-3 w-3" />
-              </Link>
+              </a>
             </div>
           </div>
         </div>
