@@ -8,6 +8,7 @@
     "start": "next start --port 3002"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "axios": "^1.16.1",
     "marked": "^18.0.3",
     "next": "^15.3.1",
