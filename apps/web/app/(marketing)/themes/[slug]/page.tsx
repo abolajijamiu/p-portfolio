@@ -5,6 +5,21 @@ import { THEMES } from '@/lib/content/themes'
 import { ArrowRightIcon } from '@/components/ui/Icons'
 import { ThemeMockup } from '@/components/marketing/ThemeMockup'
 
+export const revalidate = 3600
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+
+async function getCheckoutUrl(slug: string): Promise<string | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/cms/themes/published/${slug}`, { next: { revalidate: 3600 } })
+    if (!res.ok) return null
+    const data = await res.json()
+    return data.checkoutUrl ?? null
+  } catch {
+    return null
+  }
+}
+
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateStaticParams() {
@@ -30,6 +45,7 @@ export default async function ThemeDetailPage({ params }: Props) {
   const theme = THEMES.find((t) => t.slug === slug)
   if (!theme) notFound()
 
+  const checkoutUrl = await getCheckoutUrl(slug)
   const related = THEMES.filter((t) => t.slug !== slug).slice(0, 2)
 
   return (
@@ -90,7 +106,9 @@ export default async function ThemeDetailPage({ params }: Props) {
                 Request demo
               </Link>
               <a
-                href={`/contact?theme=${theme.slug}&intent=purchase`}
+                href={checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
+                target={checkoutUrl ? '_blank' : undefined}
+                rel={checkoutUrl ? 'noopener noreferrer' : undefined}
                 className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
                 Get this theme
@@ -261,13 +279,15 @@ export default async function ThemeDetailPage({ params }: Props) {
               ))}
             </ol>
             <div className="mt-8 pt-6 border-t border-border flex items-center gap-3">
-              <Link
-                href={`/contact?theme=${theme.slug}&intent=purchase`}
+              <a
+                href={checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
+                target={checkoutUrl ? '_blank' : undefined}
+                rel={checkoutUrl ? 'noopener noreferrer' : undefined}
                 className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
                 Purchase {theme.name}
                 <ArrowRightIcon className="h-3.5 w-3.5" />
-              </Link>
+              </a>
               <Link
                 href={`/contact?theme=${theme.slug}&intent=demo`}
                 className="text-sm text-muted hover:text-ink transition-[color] duration-150"

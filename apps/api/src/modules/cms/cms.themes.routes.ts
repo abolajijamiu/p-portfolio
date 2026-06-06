@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../../db/client'
 import { cmsThemes, type NewCmsTheme } from '../../db/schema'
@@ -38,6 +38,19 @@ cmsThemesRouter.get('/published', async (_req, res, next) => {
       orderBy: (t, { asc }) => [asc(t.name)],
     })
     res.json(themes)
+  } catch (err) {
+    next(err)
+  }
+})
+
+// GET /cms/themes/published/:slug — public, used by the marketing site
+cmsThemesRouter.get('/published/:slug', async (req, res, next) => {
+  try {
+    const theme = await db.query.cmsThemes.findFirst({
+      where: and(eq(cmsThemes.slug, req.params.slug), eq(cmsThemes.status, 'published')),
+    })
+    if (!theme) return res.status(404).json({ error: 'Not found' })
+    res.json(theme)
   } catch (err) {
     next(err)
   }

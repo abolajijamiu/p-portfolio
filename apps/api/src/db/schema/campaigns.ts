@@ -52,9 +52,22 @@ export const campaigns = pgTable('campaigns', {
   impressionCap:     integer('impression_cap'),      // null = unlimited
   frequencyCapHours: integer('frequency_cap_hours'), // null = no cooldown
 
+  // Trigger
+  triggerType:       text('trigger_type').notNull().default('immediate'), // immediate | time_delay | scroll_depth | exit_intent | returning_visitor
+  triggerDelay:      integer('trigger_delay'),        // seconds after page load
+  triggerScrollDepth: integer('trigger_scroll_depth'), // 0–100 percent
+
+  // Behavior
+  duration:         integer('duration'),              // auto-dismiss after N seconds; null = persistent
+  collapseToWidget: boolean('collapse_to_widget').notNull().default(false),
+  position:         text('position').notNull().default('bottom-right'), // top | bottom-left | bottom-right | bottom-center
+  oncePerSession:   boolean('once_per_session').notNull().default(false),
+  untilConversion:  boolean('until_conversion').notNull().default(false),
+
   // Sequences
-  sequenceId:       uuid('sequence_id'),
-  sequencePosition: integer('sequence_position'),
+  sequenceId:        uuid('sequence_id'),
+  sequencePosition:  integer('sequence_position'),
+  sequenceCondition: text('sequence_condition').default('seen'), // seen | dismissed | clicked | converted | not_converted
 
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   ...timestamps,

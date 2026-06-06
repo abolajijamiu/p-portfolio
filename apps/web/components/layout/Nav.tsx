@@ -16,9 +16,10 @@ const LINKS = [
 function Wordmark({ className }: { className?: string }) {
   return (
     <Link href="/" className={className}>
-      <span className="text-sm font-semibold tracking-tight text-ink">
-        E<span className="text-brand">-Tech.</span>
-      </span>
+      <div className="flex flex-col leading-none gap-0.5">
+        <span className="text-[15px] font-black tracking-tight text-ink uppercase">E-TECH</span>
+        <span className="text-[7.5px] font-semibold tracking-[0.18em] text-brand uppercase">Systems &amp; Solutions</span>
+      </div>
     </Link>
   )
 }

@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gte, isNull, lte, or, sql } from 'drizzle-orm'
 import { Router } from 'express'
 import { db } from '../../db/client'
 import { campaignEvents, campaigns, type NewCampaign } from '../../db/schema'
@@ -16,6 +16,27 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   paused:    ['active', 'archived'],
   archived:  [],
 }
+
+// ─── Public ───────────────────────────────────────────────────────────────────
+
+// GET /cms/campaigns/active — returns all active campaigns for client-side engine
+// The engine handles per-user filtering (frequency, sequence) in the browser
+campaignsRouter.get('/active', async (_req, res, next) => {
+  try {
+    const now = new Date()
+    const active = await db.query.campaigns.findMany({
+      where: and(
+        eq(campaigns.status, 'active'),
+        or(isNull(campaigns.startAt), lte(campaigns.startAt, now)),
+        or(isNull(campaigns.endAt), gte(campaigns.endAt, now)),
+      ),
+      orderBy: (t, { asc }) => [asc(t.priority)],
+    })
+    res.json(active)
+  } catch (err) {
+    next(err)
+  }
+})
 
 // ─── Admin CRUD ───────────────────────────────────────────────────────────────
 

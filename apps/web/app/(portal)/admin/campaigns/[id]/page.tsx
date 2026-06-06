@@ -23,6 +23,26 @@ const THEME_STYLES  = ['default', 'minimal', 'emphasis']
 const ANIMATIONS    = ['none', 'fade', 'slide']
 const AUDIENCES     = [{ value: 'all', label: 'Everyone' }, { value: 'authenticated', label: 'Signed-in users' }, { value: 'anonymous', label: 'Visitors only' }]
 const DEVICES       = [{ value: 'all', label: 'All devices' }, { value: 'mobile', label: 'Mobile only' }, { value: 'desktop', label: 'Desktop only' }]
+const TRIGGER_TYPES = [
+  { value: 'immediate',        label: 'Immediate (on page load)' },
+  { value: 'time_delay',       label: 'Time delay' },
+  { value: 'scroll_depth',     label: 'Scroll depth' },
+  { value: 'exit_intent',      label: 'Exit intent' },
+  { value: 'returning_visitor', label: 'Returning visitor' },
+]
+const POSITIONS = [
+  { value: 'bottom-right',  label: 'Bottom right' },
+  { value: 'bottom-left',   label: 'Bottom left' },
+  { value: 'bottom-center', label: 'Bottom center' },
+  { value: 'top',           label: 'Top bar' },
+]
+const SEQUENCE_CONDITIONS = [
+  { value: 'seen',          label: 'Has seen previous campaign' },
+  { value: 'dismissed',     label: 'Dismissed previous campaign' },
+  { value: 'clicked',       label: 'Clicked previous campaign' },
+  { value: 'converted',     label: 'Converted on previous campaign' },
+  { value: 'not_converted', label: 'Seen but not converted' },
+]
 
 const STATUS_COLORS: Record<CampaignStatus, string> = {
   draft:     'bg-amber-50 text-amber-700',
@@ -109,6 +129,18 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
     endAt:             '',
     impressionCap:     '',
     frequencyCapHours: '',
+    // Trigger
+    triggerType:        'immediate',
+    triggerDelay:       '',
+    triggerScrollDepth: '',
+    // Behavior
+    duration:           '',
+    collapseToWidget:   false,
+    position:           'bottom-right',
+    oncePerSession:     false,
+    untilConversion:    false,
+    // Sequence condition
+    sequenceCondition:  'seen',
   })
 
   useEffect(() => {
@@ -135,6 +167,15 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
       endAt:             toLocalDatetime(campaign.endAt),
       impressionCap:     campaign.impressionCap != null ? String(campaign.impressionCap) : '',
       frequencyCapHours: campaign.frequencyCapHours != null ? String(campaign.frequencyCapHours) : '',
+      triggerType:        campaign.triggerType ?? 'immediate',
+      triggerDelay:       campaign.triggerDelay != null ? String(campaign.triggerDelay) : '',
+      triggerScrollDepth: campaign.triggerScrollDepth != null ? String(campaign.triggerScrollDepth) : '',
+      duration:           campaign.duration != null ? String(campaign.duration) : '',
+      collapseToWidget:   campaign.collapseToWidget ?? false,
+      position:           campaign.position ?? 'bottom-right',
+      oncePerSession:     campaign.oncePerSession ?? false,
+      untilConversion:    campaign.untilConversion ?? false,
+      sequenceCondition:  campaign.sequenceCondition ?? 'seen',
     })
     setDirty(false)
   }, [campaign])
@@ -170,6 +211,15 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
         endAt:             form.endAt   ? new Date(form.endAt).toISOString()   : null,
         impressionCap:     form.impressionCap     ? parseInt(form.impressionCap, 10)     : null,
         frequencyCapHours: form.frequencyCapHours ? parseInt(form.frequencyCapHours, 10) : null,
+        triggerType:        form.triggerType,
+        triggerDelay:       form.triggerDelay       ? parseInt(form.triggerDelay, 10)       : null,
+        triggerScrollDepth: form.triggerScrollDepth ? parseInt(form.triggerScrollDepth, 10) : null,
+        duration:           form.duration           ? parseInt(form.duration, 10)           : null,
+        collapseToWidget:   form.collapseToWidget,
+        position:           form.position,
+        oncePerSession:     form.oncePerSession,
+        untilConversion:    form.untilConversion,
+        sequenceCondition:  form.sequenceCondition,
       })
       mutate(updated, false)
       setDirty(false)
@@ -348,6 +398,54 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
                 />
               </Field>
             </div>
+          </section>
+
+          {/* Trigger & Behavior */}
+          <section className="border border-border rounded-xl bg-white p-5 space-y-4">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Trigger</p>
+            <Field label="Trigger type">
+              <Select value={form.triggerType} onChange={(v) => update('triggerType', v)} options={TRIGGER_TYPES} />
+            </Field>
+            {form.triggerType === 'time_delay' && (
+              <Input label="Delay (seconds)" type="number" value={form.triggerDelay} onChange={(e) => update('triggerDelay', e.target.value)} placeholder="12" />
+            )}
+            {form.triggerType === 'scroll_depth' && (
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="Scroll depth (%)" type="number" value={form.triggerScrollDepth} onChange={(e) => update('triggerScrollDepth', e.target.value)} placeholder="70" />
+                <Input label="Additional delay after scroll (seconds)" type="number" value={form.triggerDelay} onChange={(e) => update('triggerDelay', e.target.value)} placeholder="30" />
+              </div>
+            )}
+            {form.triggerType === 'returning_visitor' && (
+              <Input label="Delay on return visit (seconds)" type="number" value={form.triggerDelay} onChange={(e) => update('triggerDelay', e.target.value)} placeholder="0" />
+            )}
+          </section>
+
+          <section className="border border-border rounded-xl bg-white p-5 space-y-4">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Behavior</p>
+            <div className="grid grid-cols-2 gap-4">
+              <Field label="Position on screen">
+                <Select value={form.position} onChange={(v) => update('position', v)} options={POSITIONS} />
+              </Field>
+              <Input
+                label="Auto-dismiss after (seconds)"
+                type="number"
+                value={form.duration}
+                onChange={(e) => update('duration', e.target.value)}
+                placeholder="Never"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-3 pt-1">
+              <Checkbox label="Collapse to widget after timer expires" checked={form.collapseToWidget} onChange={(v) => update('collapseToWidget', v)} />
+              <Checkbox label="Show once per session" checked={form.oncePerSession} onChange={(v) => update('oncePerSession', v)} />
+              <Checkbox label="Stop showing after user converts" checked={form.untilConversion} onChange={(v) => update('untilConversion', v)} />
+            </div>
+          </section>
+
+          <section className="border border-border rounded-xl bg-white p-5 space-y-4">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Sequence</p>
+            <Field label="Required state of previous campaign in sequence" hint="Only applies if this campaign is part of a sequence (position 2+).">
+              <Select value={form.sequenceCondition} onChange={(v) => update('sequenceCondition', v)} options={SEQUENCE_CONDITIONS} />
+            </Field>
           </section>
 
           {/* Targeting */}

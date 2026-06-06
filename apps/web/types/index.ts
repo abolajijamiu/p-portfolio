@@ -185,8 +185,20 @@ export type Campaign = {
   endAt?: string | null
   impressionCap?: number | null
   frequencyCapHours?: number | null
+  // Trigger
+  triggerType: string
+  triggerDelay?: number | null
+  triggerScrollDepth?: number | null
+  // Behavior
+  duration?: number | null
+  collapseToWidget: boolean
+  position: string
+  oncePerSession: boolean
+  untilConversion: boolean
+  // Sequences
   sequenceId?: string | null
   sequencePosition?: number | null
+  sequenceCondition?: string | null
   createdAt: string
   updatedAt: string
 }

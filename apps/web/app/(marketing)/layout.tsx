@@ -1,6 +1,7 @@
 import { Nav } from '@/components/layout/Nav'
 import { Footer } from '@/components/layout/Footer'
 import { ContactFloat } from '@/components/ui/ContactFloat'
+import { CampaignRenderer } from '@/components/campaigns/CampaignRenderer'
 import type { ReactNode } from 'react'
 
 export default function MarketingLayout({ children }: { children: ReactNode }) {
@@ -10,6 +11,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <main className="flex-1">{children}</main>
       <Footer />
       <ContactFloat />
+      <CampaignRenderer />
     </div>
   )
 }
