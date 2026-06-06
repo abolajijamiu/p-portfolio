@@ -11,6 +11,7 @@ export * from './notifications'
 export * from './sessions'
 export * from './invites'
 export * from './cms'
+export * from './campaigns'
 
 import { users } from './users'
 import { organizations } from './organizations'

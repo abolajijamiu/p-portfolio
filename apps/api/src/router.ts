@@ -13,6 +13,7 @@ import { cmsTestimonialsRouter } from './modules/cms/cms.testimonials.routes'
 import { cmsInquiriesRouter } from './modules/cms/cms.inquiries.routes'
 import { cmsArticlesRouter } from './modules/cms/cms.articles.routes'
 import { chatRouter } from './modules/chat/chat.routes'
+import { campaignsRouter } from './modules/campaigns/campaigns.routes'
 
 export const router = Router()
 
@@ -32,3 +33,4 @@ router.use('/cms/testimonials', cmsTestimonialsRouter)
 router.use('/cms/inquiries', cmsInquiriesRouter)
 router.use('/cms/articles', cmsArticlesRouter)
 router.use('/chat', chatRouter)
+router.use('/cms/campaigns', campaignsRouter)

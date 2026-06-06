@@ -158,6 +158,50 @@ export type CmsInquiry = {
   createdAt: string
 }
 
+export type CampaignStatus    = 'draft' | 'scheduled' | 'active' | 'paused' | 'archived'
+export type CampaignPlacement = 'announcement_bar' | 'inline' | 'sticky_footer' | 'exit_intent'
+
+export type Campaign = {
+  id: string
+  name: string
+  status: CampaignStatus
+  priority: number
+  placement: CampaignPlacement
+  inlineHook?: string | null
+  heading?: string | null
+  body?: string | null
+  ctaLabel?: string | null
+  ctaUrl?: string | null
+  ctaNewTab: boolean
+  secondaryCtaLabel?: string | null
+  secondaryCtaUrl?: string | null
+  dismissible: boolean
+  themeStyle?: string | null
+  animation?: string | null
+  audience: string
+  pagePattern?: string | null
+  deviceTarget: string
+  startAt?: string | null
+  endAt?: string | null
+  impressionCap?: number | null
+  frequencyCapHours?: number | null
+  sequenceId?: string | null
+  sequencePosition?: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type CampaignAnalytics = {
+  impressions: number
+  uniqueViewers: number
+  clicks: number
+  dismissals: number
+  conversions: number
+  clickRate: number
+  dismissRate: number
+  conversionRate: number
+}
+
 export type ProjectStatus = 'draft' | 'active' | 'review' | 'complete' | 'archived'
 
 export type Project = {
