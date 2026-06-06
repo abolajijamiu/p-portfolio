@@ -275,13 +275,15 @@ export default async function WorkDetailPage({ params }: Props) {
               We take on a small number of new engagements each year. Tell us about your project.
             </p>
           </div>
-          <Link
-            href="/contact"
+          <a
+            href="https://wa.me/447478034171"
+            target="_blank"
+            rel="noopener noreferrer"
             className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
           >
             Start a conversation
             <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
+          </a>
         </div>
       </div>
 

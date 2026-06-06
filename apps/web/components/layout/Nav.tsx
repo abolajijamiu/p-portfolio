@@ -66,12 +66,14 @@ export function Nav() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/contact"
+            <a
+              href="https://wa.me/447478034171"
+              target="_blank"
+              rel="noopener noreferrer"
               className="hidden md:inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
             >
               Start a conversation
-            </Link>
+            </a>
             <button
               onClick={() => setOpen((v) => !v)}
               aria-label={open ? 'Close menu' : 'Open menu'}
@@ -112,12 +114,14 @@ export function Nav() {
           </nav>
 
           <div className="shrink-0 px-5 pb-10 pt-6">
-            <Link
-              href="/contact"
+            <a
+              href="https://wa.me/447478034171"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center w-full bg-ink text-white text-sm font-medium py-3.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
             >
               Start a conversation
-            </Link>
+            </a>
           </div>
         </div>
       )}

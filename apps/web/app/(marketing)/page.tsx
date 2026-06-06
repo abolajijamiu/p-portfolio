@@ -246,13 +246,15 @@ export default function HomePage() {
             SEO, or post-purchase — we'd like to hear about it.
           </p>
           <div className="flex items-center gap-5">
-            <Link
-              href="/contact"
+            <a
+              href="https://wa.me/447478034171"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-white text-ink text-sm font-medium px-5 py-2.5 rounded-md hover:bg-surface transition-[background-color] duration-150"
             >
               Start a conversation
               <ArrowRightIcon className="h-3.5 w-3.5" />
-            </Link>
+            </a>
             <Link
               href="/themes"
               className="text-sm text-white/50 hover:text-white transition-[color] duration-150"

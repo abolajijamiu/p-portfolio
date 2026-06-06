@@ -78,12 +78,14 @@ export default async function ThemesPage() {
                 </div>
               ))}
             </div>
-            <Link
-              href="/contact"
+            <a
+              href="https://wa.me/447478034171"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
             >
               Start a conversation
-            </Link>
+            </a>
           </div>
         </div>
       </div>
