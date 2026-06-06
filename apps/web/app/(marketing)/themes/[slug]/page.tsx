@@ -126,12 +126,14 @@ export default async function ThemeDetailPage({ params }: Props) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <Link
-                href="/contact"
+              <a
+                href={theme.demoStoreUrl ?? `/contact?theme=${theme.slug}&intent=demo`}
+                target={theme.demoStoreUrl ? '_blank' : undefined}
+                rel={theme.demoStoreUrl ? 'noopener noreferrer' : undefined}
                 className="text-xs text-muted hover:text-ink transition-[color] duration-150 underline underline-offset-2"
               >
-                Request demo
-              </Link>
+                {theme.demoStoreUrl ? 'View demo' : 'Request demo'}
+              </a>
               <a
                 href={theme.checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
                 target={theme.checkoutUrl ? '_blank' : undefined}
@@ -334,12 +336,14 @@ export default async function ThemeDetailPage({ params }: Props) {
                 Purchase {theme.name}
                 <ArrowRightIcon className="h-3.5 w-3.5" />
               </a>
-              <Link
-                href={`/contact?theme=${theme.slug}&intent=demo`}
+              <a
+                href={theme.demoStoreUrl ?? `/contact?theme=${theme.slug}&intent=demo`}
+                target={theme.demoStoreUrl ? '_blank' : undefined}
+                rel={theme.demoStoreUrl ? 'noopener noreferrer' : undefined}
                 className="text-sm text-muted hover:text-ink transition-[color] duration-150"
               >
-                Request demo first
-              </Link>
+                {theme.demoStoreUrl ? 'View demo first' : 'Request demo first'}
+              </a>
             </div>
           </div>
         </div>
