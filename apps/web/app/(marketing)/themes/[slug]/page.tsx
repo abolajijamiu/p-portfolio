@@ -132,7 +132,7 @@ export default async function ThemeDetailPage({ params }: Props) {
                 rel={theme.demoStoreUrl ? 'noopener noreferrer' : undefined}
                 className="text-xs text-muted hover:text-ink transition-[color] duration-150 underline underline-offset-2"
               >
-                {theme.demoStoreUrl ? 'View demo' : 'Request demo'}
+                Live demo
               </a>
               <a
                 href={theme.checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
@@ -283,14 +283,14 @@ export default async function ThemeDetailPage({ params }: Props) {
                 rel="noopener noreferrer"
                 className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
-                View demo store
+                Live demo
               </a>
             ) : (
               <Link
                 href={`/contact?theme=${theme.slug}&intent=demo`}
                 className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
-                Request demo store
+                Live demo
               </Link>
             )}
           </div>
@@ -342,7 +342,7 @@ export default async function ThemeDetailPage({ params }: Props) {
                 rel={theme.demoStoreUrl ? 'noopener noreferrer' : undefined}
                 className="text-sm text-muted hover:text-ink transition-[color] duration-150"
               >
-                {theme.demoStoreUrl ? 'View demo first' : 'Request demo first'}
+                Live demo
               </a>
             </div>
           </div>

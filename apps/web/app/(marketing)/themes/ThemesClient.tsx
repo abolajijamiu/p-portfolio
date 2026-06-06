@@ -84,12 +84,14 @@ export function ThemesClient({ themes }: { themes: CmsTheme[] }) {
                   <p className="text-lg font-semibold text-ink tracking-tight">{formatPrice(theme.priceCents)}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Link
-                    href="/contact"
+                  <a
+                    href={theme.demoStoreUrl ?? `/contact?theme=${theme.slug}&intent=demo`}
+                    target={theme.demoStoreUrl ? '_blank' : undefined}
+                    rel={theme.demoStoreUrl ? 'noopener noreferrer' : undefined}
                     className="text-xs text-muted hover:text-ink transition-[color] duration-150 underline underline-offset-2"
                   >
-                    Request demo
-                  </Link>
+                    Live demo
+                  </a>
                   <Link
                     href={`/themes/${theme.slug}`}
                     className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
