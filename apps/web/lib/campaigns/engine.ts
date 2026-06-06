@@ -114,11 +114,26 @@ export class CampaignEngine {
 
   private _armTriggers() {
     for (const campaign of this.campaigns) {
-      if (!this._passesFrequency(campaign)) continue
-      if (this.armed.has(campaign.id)) continue
+      if (!this._passesFrequency(campaign))    continue
+      if (!this._passesPagePattern(campaign))  continue
+      if (!this._passesDeviceTarget(campaign)) continue
+      if (this.armed.has(campaign.id))         continue
       this.armed.add(campaign.id)
       this._setupTrigger(campaign)
     }
+  }
+
+  private _passesPagePattern(c: Campaign): boolean {
+    if (!c.pagePattern) return true
+    const path    = window.location.pathname
+    const pattern = c.pagePattern
+    return path === pattern || path.startsWith(pattern.replace(/\*$/, '') || pattern + '/')
+  }
+
+  private _passesDeviceTarget(c: Campaign): boolean {
+    if (!c.deviceTarget || c.deviceTarget === 'all') return true
+    const isMobile = window.innerWidth < 768
+    return c.deviceTarget === 'mobile' ? isMobile : !isMobile
   }
 
   private _setupTrigger(c: Campaign) {
@@ -308,10 +323,11 @@ export class CampaignEngine {
 
   private _sendEvent(campaignId: string, eventType: string) {
     const userKey = this._userKey()
+    const device  = window.innerWidth < 768 ? 'mobile' : 'desktop'
     fetch(`${this.apiBase}/api/v1/cms/campaigns/${campaignId}/events`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ eventType, userKey, page: window.location.pathname }),
+      body:    JSON.stringify({ eventType, userKey, page: window.location.pathname, device }),
       keepalive: true,
     }).catch(() => {})
   }
