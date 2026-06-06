@@ -362,11 +362,17 @@ campaignsRouter.post('/', ...guard, async (req, res, next) => {
 // PATCH /cms/campaigns/:id
 campaignsRouter.patch('/:id', ...guard, async (req, res, next) => {
   try {
-    const body = req.body as Partial<NewCampaign>
+    const b = req.body as any
 
     const [campaign] = await db
       .update(campaigns)
-      .set({ ...body, updatedAt: new Date() })
+      .set({
+        ...b,
+        // JSON dates arrive as strings; Drizzle's timestamp columns expect Date objects
+        startAt:   b.startAt != null ? new Date(b.startAt) : null,
+        endAt:     b.endAt   != null ? new Date(b.endAt)   : null,
+        updatedAt: new Date(),
+      })
       .where(eq(campaigns.id, req.params.id as string))
       .returning()
 
