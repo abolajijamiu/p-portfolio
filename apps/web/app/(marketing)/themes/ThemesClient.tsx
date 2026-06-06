@@ -67,7 +67,9 @@ export function ThemesClient({ themes }: { themes: CmsTheme[] }) {
                 </span>
               </div>
 
-              <h2 className="text-xl font-semibold text-ink tracking-tight mb-1">{theme.name}</h2>
+              <Link href={`/themes/${theme.slug}`} className="group/title">
+                <h2 className="text-xl font-semibold text-ink tracking-tight mb-1 group-hover/title:text-brand transition-[color] duration-150">{theme.name}</h2>
+              </Link>
               <p className="text-sm text-muted mb-4 leading-snug">{theme.tagline}</p>
 
               <div className="flex flex-wrap gap-1.5 mb-6 flex-1">
@@ -92,12 +94,14 @@ export function ThemesClient({ themes }: { themes: CmsTheme[] }) {
                   >
                     Live demo
                   </a>
-                  <Link
-                    href={`/themes/${theme.slug}`}
+                  <a
+                    href={theme.checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
+                    target={theme.checkoutUrl ? '_blank' : undefined}
+                    rel={theme.checkoutUrl ? 'noopener noreferrer' : undefined}
                     className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
                   >
-                    View theme
-                  </Link>
+                    Get this theme
+                  </a>
                 </div>
               </div>
             </div>
