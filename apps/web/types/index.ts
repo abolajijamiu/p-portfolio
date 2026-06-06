@@ -39,6 +39,8 @@ export type CmsTheme = {
   checkoutUrl?: string | null
   demoStoreUrl?: string | null
   demoStoreNote?: string | null
+  screenshotUrls: string[]
+  videoUrl?: string | null
   videoId?: string | null
   videoPlatform?: string | null
   heroMediaId?: string | null
@@ -178,6 +180,8 @@ export type Campaign = {
   dismissible: boolean
   themeStyle?: string | null
   animation?: string | null
+  bgColor?: string | null
+  textColor?: string | null
   audience: string
   pagePattern?: string | null
   deviceTarget: string

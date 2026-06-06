@@ -7,6 +7,7 @@ import { api } from '@/lib/api'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { MediaUploader } from '@/components/ui/MediaUploader'
 import type { CmsTheme, CmsThemeFeature, CmsThemeLicense } from '@/types'
 
 const CATEGORIES = ['fashion', 'electronics', 'luxury', 'food', 'dtc']
@@ -247,6 +248,8 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
     checkoutUrl: '',
     demoStoreUrl: '',
     demoStoreNote: '',
+    screenshotUrls: [] as string[],
+    videoUrl: '',
     videoId: '',
     videoPlatform: '',
     seoTitle: '',
@@ -271,6 +274,8 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
       checkoutUrl: theme.checkoutUrl ?? '',
       demoStoreUrl: theme.demoStoreUrl ?? '',
       demoStoreNote: theme.demoStoreNote ?? '',
+      screenshotUrls: theme.screenshotUrls ?? [],
+      videoUrl: theme.videoUrl ?? '',
       videoId: theme.videoId ?? '',
       videoPlatform: theme.videoPlatform ?? '',
       seoTitle: theme.seoTitle ?? '',
@@ -304,6 +309,8 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
         checkoutUrl: form.checkoutUrl.trim() || null,
         demoStoreUrl: form.demoStoreUrl.trim() || null,
         demoStoreNote: form.demoStoreNote.trim() || null,
+        screenshotUrls: form.screenshotUrls.filter((u) => u.trim()),
+        videoUrl: form.videoUrl.trim() || null,
         videoId: form.videoId.trim() || null,
         videoPlatform: form.videoPlatform || null,
         seoTitle: form.seoTitle.trim() || null,
@@ -479,11 +486,36 @@ export default function ThemeEditorPage({ params }: { params: Promise<Params> })
             </div>
           </section>
 
+          {/* Screenshots */}
+          <section className="border border-border rounded-xl bg-white p-5 space-y-4">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Screenshots</p>
+            <MediaUploader
+              label="Theme screenshots"
+              accept="image/*"
+              multiple
+              values={form.screenshotUrls}
+              onChange={(v) => update('screenshotUrls', v)}
+              hint="First image is the hero on the detail page and listing cards. Upload multiple for a gallery."
+            />
+          </section>
+
           {/* Video */}
           <section className="border border-border rounded-xl bg-white p-5 space-y-4">
             <p className="text-[11px] font-medium text-muted uppercase tracking-wider">Video walkthrough</p>
+            <MediaUploader
+              label="Upload video file"
+              accept="video/*"
+              values={form.videoUrl ? [form.videoUrl] : []}
+              onChange={(v) => update('videoUrl', v[v.length - 1] ?? '')}
+              hint="Upload an MP4 or WebM. Uploaded video takes priority over a YouTube/Vimeo embed below."
+            />
+            <div className="relative flex items-center gap-3">
+              <span className="flex-1 h-px bg-border" />
+              <span className="text-[10px] text-muted/40 uppercase tracking-wider">or embed</span>
+              <span className="flex-1 h-px bg-border" />
+            </div>
             <div className="grid grid-cols-2 gap-4">
-              <Input label="Video ID" value={form.videoId} onChange={(e) => update('videoId', e.target.value)} placeholder="dQw4w9WgXcQ" />
+              <Input label="YouTube / Vimeo / Loom ID" value={form.videoId} onChange={(e) => update('videoId', e.target.value)} placeholder="dQw4w9WgXcQ" />
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-ink">Platform</label>
                 <select

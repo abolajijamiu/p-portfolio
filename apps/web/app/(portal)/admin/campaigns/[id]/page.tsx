@@ -122,6 +122,8 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
     dismissible:       true,
     themeStyle:        'default',
     animation:         'none',
+    bgColor:           '',
+    textColor:         '',
     audience:          'all',
     pagePattern:       '',
     deviceTarget:      'all',
@@ -162,6 +164,8 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
       dismissible:       campaign.dismissible ?? true,
       themeStyle:        campaign.themeStyle ?? 'default',
       animation:         campaign.animation ?? 'none',
+      bgColor:           campaign.bgColor ?? '',
+      textColor:         campaign.textColor ?? '',
       audience:          campaign.audience ?? 'all',
       pagePattern:       campaign.pagePattern ?? '',
       deviceTarget:      campaign.deviceTarget ?? 'all',
@@ -207,6 +211,8 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
         dismissible:       form.dismissible,
         themeStyle:        form.themeStyle,
         animation:         form.animation,
+        bgColor:           form.bgColor.trim() || null,
+        textColor:         form.textColor.trim() || null,
         audience:          form.audience,
         pagePattern:       form.pagePattern.trim() || null,
         deviceTarget:      form.deviceTarget,
@@ -401,6 +407,79 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
                   options={ANIMATIONS.map((a) => ({ value: a, label: a.charAt(0).toUpperCase() + a.slice(1) }))}
                 />
               </Field>
+            </div>
+
+            {/* Brand colours */}
+            <div className="pt-1 border-t border-border space-y-3">
+              <p className="text-[11px] text-muted/70">Brand colours — overrides the default dark style</p>
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="Background colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.bgColor || '#111111'}
+                      onChange={(e) => update('bgColor', e.target.value)}
+                      className="h-9 w-10 rounded-md border border-border cursor-pointer p-0.5 bg-white shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={form.bgColor}
+                      onChange={(e) => update('bgColor', e.target.value)}
+                      placeholder="#111111"
+                      maxLength={7}
+                      className="flex-1 h-9 px-2.5 text-sm border border-border rounded-md bg-white text-ink font-mono focus:outline-none focus-visible:ring-1 focus-visible:ring-ink"
+                    />
+                  </div>
+                </Field>
+                <Field label="Text colour">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={form.textColor || '#ffffff'}
+                      onChange={(e) => update('textColor', e.target.value)}
+                      className="h-9 w-10 rounded-md border border-border cursor-pointer p-0.5 bg-white shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={form.textColor}
+                      onChange={(e) => update('textColor', e.target.value)}
+                      placeholder="#ffffff"
+                      maxLength={7}
+                      className="flex-1 h-9 px-2.5 text-sm border border-border rounded-md bg-white text-ink font-mono focus:outline-none focus-visible:ring-1 focus-visible:ring-ink"
+                    />
+                  </div>
+                </Field>
+              </div>
+
+              {/* Live preview */}
+              <div
+                className="rounded-lg px-4 py-3 flex items-center justify-between gap-4 transition-colors duration-150"
+                style={{
+                  background: form.bgColor || '#111111',
+                  color:      form.textColor || '#ffffff',
+                }}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span
+                    className="h-6 w-6 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+                    style={{ background: (form.textColor || '#ffffff') + '22', color: form.textColor || '#ffffff' }}
+                  >
+                    ET
+                  </span>
+                  <p className="text-sm font-medium truncate">
+                    {form.heading || 'Headline preview'}
+                  </p>
+                </div>
+                {form.ctaLabel && (
+                  <span
+                    className="text-xs font-medium shrink-0 px-2.5 py-1 rounded"
+                    style={{ background: (form.textColor || '#ffffff') + '22', color: form.textColor || '#ffffff' }}
+                  >
+                    {form.ctaLabel}
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-muted/50">Live preview — leave blank to use the default dark style</p>
             </div>
           </section>
 

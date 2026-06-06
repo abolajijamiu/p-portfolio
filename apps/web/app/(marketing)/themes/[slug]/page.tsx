@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowRightIcon } from '@/components/ui/Icons'
 import { ThemeMockup } from '@/components/marketing/ThemeMockup'
+import { VideoEmbed } from '@/components/marketing/VideoEmbed'
 import type { CmsTheme } from '@/types'
 
 export const revalidate = 3600
@@ -148,18 +149,47 @@ export default async function ThemeDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Preview mockup */}
+      {/* Preview — screenshots or wireframe fallback */}
       <div className="py-12 md:py-16">
-        <div className={`w-full aspect-[16/7] rounded-xl ${theme.bgClass ?? 'bg-surface'} relative overflow-hidden`}>
-          <ThemeMockup theme={{
-            slug:     theme.slug,
-            category: theme.category,
-            accent:   theme.accentColor ?? '#888888',
-          }} />
-        </div>
-        <p className="text-[11px] text-muted/50 mt-3 text-center">
-          Wireframe representation — live preview on a development store available on request
-        </p>
+        {(theme.screenshotUrls ?? []).length > 0 ? (
+          <>
+            <div className="w-full rounded-xl overflow-hidden border border-border">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={theme.screenshotUrls[0]}
+                alt={`${theme.name} — theme screenshot`}
+                className="w-full object-cover"
+              />
+            </div>
+            {theme.screenshotUrls.length > 1 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                {theme.screenshotUrls.slice(1).map((url, i) => (
+                  <div key={i} className="rounded-lg overflow-hidden border border-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={url}
+                      alt={`${theme.name} screenshot ${i + 2}`}
+                      className="w-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            <div className={`w-full aspect-[16/7] rounded-xl ${theme.bgClass ?? 'bg-surface'} relative overflow-hidden`}>
+              <ThemeMockup theme={{
+                slug:     theme.slug,
+                category: theme.category,
+                accent:   theme.accentColor ?? '#888888',
+              }} />
+            </div>
+            <p className="text-[11px] text-muted/50 mt-3 text-center">
+              Wireframe representation — live preview on a development store available on request
+            </p>
+          </>
+        )}
       </div>
 
       {/* Features */}
@@ -263,6 +293,29 @@ export default async function ThemeDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Video walkthrough */}
+      {(theme.videoUrl || (theme.videoId && theme.videoPlatform)) && (
+        <div className="py-12 md:py-16 border-t border-border">
+          <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-6">
+            Video walkthrough
+          </p>
+          {theme.videoUrl ? (
+            <video
+              src={theme.videoUrl}
+              controls
+              preload="metadata"
+              className="w-full rounded-xl bg-black"
+            />
+          ) : (
+            <VideoEmbed
+              id={theme.videoId!}
+              platform={theme.videoPlatform as 'youtube' | 'loom' | 'vimeo'}
+              title={`${theme.name} — Theme walkthrough`}
+            />
+          )}
+        </div>
+      )}
 
       {/* Demo store */}
       {(theme.demoStoreUrl || theme.demoStoreNote) && (
@@ -372,11 +425,20 @@ export default async function ThemeDetailPage({ params }: Props) {
                 className="group bg-white p-6 md:p-7 flex flex-col hover:bg-[#fafafa] transition-[background-color] duration-200"
               >
                 <div className={`w-full aspect-[16/7] rounded-lg mb-5 relative overflow-hidden ${t.bgClass ?? 'bg-surface'}`}>
-                  <ThemeMockup theme={{
-                    slug:     t.slug,
-                    category: t.category,
-                    accent:   t.accentColor ?? '#888888',
-                  }} />
+                  {(t.screenshotUrls ?? [])[0] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={t.screenshotUrls[0]}
+                      alt={`${t.name} preview`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <ThemeMockup theme={{
+                      slug:     t.slug,
+                      category: t.category,
+                      accent:   t.accentColor ?? '#888888',
+                    }} />
+                  )}
                 </div>
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <span className="text-[10px] font-medium text-muted/60 uppercase tracking-wider capitalize">

@@ -54,11 +54,20 @@ export function ThemesClient({ themes }: { themes: CmsTheme[] }) {
           {visible.map((theme) => (
             <div key={theme.slug} className="bg-white p-7 md:p-8 flex flex-col">
               <div className={`w-full aspect-[16/9] rounded-lg mb-6 md:mb-7 relative overflow-hidden ${theme.bgClass ?? 'bg-surface'}`}>
-                <ThemeMockup theme={{
-                  slug:     theme.slug,
-                  category: theme.category,
-                  accent:   theme.accentColor ?? '#888888',
-                }} />
+                {(theme.screenshotUrls ?? [])[0] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={theme.screenshotUrls[0]}
+                    alt={`${theme.name} preview`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <ThemeMockup theme={{
+                    slug:     theme.slug,
+                    category: theme.category,
+                    accent:   theme.accentColor ?? '#888888',
+                  }} />
+                )}
               </div>
 
               <div className="flex items-center gap-2 mb-3 flex-wrap">

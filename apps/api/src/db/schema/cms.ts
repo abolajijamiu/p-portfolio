@@ -73,6 +73,8 @@ export const cmsThemes = pgTable(
     checkoutUrl: text('checkout_url'),
     demoStoreUrl: text('demo_store_url'),
     demoStoreNote: text('demo_store_note'),
+    screenshotUrls: jsonb('screenshot_urls').$type<string[]>().default([]),
+    videoUrl: text('video_url'),
     videoId: text('video_id'),
     videoPlatform: text('video_platform'),
     heroMediaId: uuid('hero_media_id').references(() => cmsMedia.id, { onDelete: 'set null' }),

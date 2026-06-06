@@ -24,15 +24,21 @@ function AnnouncementBar({
   onDismiss: () => void
   onClick: () => void
 }) {
+  const bg   = campaign.bgColor   || '#111111'
+  const fg   = campaign.textColor || '#ffffff'
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-ink text-white">
+    <div
+      className="fixed top-0 left-0 right-0 z-[60]"
+      style={{ background: bg, color: fg }}
+    >
       <div className="flex items-center justify-between gap-4 px-5 py-2.5 max-w-7xl mx-auto">
         <div className="flex items-center gap-4 min-w-0">
           {campaign.heading && (
             <p className="text-sm font-medium truncate">{campaign.heading}</p>
           )}
           {campaign.body && (
-            <p className="text-sm text-white/70 truncate hidden md:block">{campaign.body}</p>
+            <p className="text-sm truncate hidden md:block" style={{ color: fg + 'bb' }}>{campaign.body}</p>
           )}
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -42,7 +48,8 @@ function AnnouncementBar({
               target={campaign.ctaNewTab ? '_blank' : undefined}
               rel={campaign.ctaNewTab ? 'noopener noreferrer' : undefined}
               onClick={onClick}
-              className="text-xs font-medium text-white underline underline-offset-2 hover:no-underline transition-all duration-150"
+              className="text-xs font-medium underline underline-offset-2 hover:no-underline transition-all duration-150"
+              style={{ color: fg }}
             >
               {campaign.ctaLabel}
             </a>
@@ -51,7 +58,8 @@ function AnnouncementBar({
             <button
               onClick={onDismiss}
               aria-label="Dismiss"
-              className="h-6 w-6 flex items-center justify-center text-white/50 hover:text-white transition-[color] duration-150"
+              className="h-6 w-6 flex items-center justify-center transition-opacity duration-150 opacity-50 hover:opacity-100"
+              style={{ color: fg }}
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -107,6 +115,8 @@ function FloatingCard({
   }, [campaign.duration, campaign.collapseToWidget])
 
   const posClass = POSITION_CLASS[campaign.position] ?? POSITION_CLASS['bottom-right']
+  const bg  = campaign.bgColor   || '#111111'
+  const fg  = campaign.textColor || '#ffffff'
 
   // ── Collapsed pill ────────────────────────────────────────────────────────
   if (collapsed) {
@@ -115,11 +125,17 @@ function FloatingCard({
         <button
           onClick={() => {
             setCollapsed(false)
-            setProgress(0) // timer finished — no more countdown
+            setProgress(0)
           }}
-          className="flex items-center gap-2.5 bg-ink text-white rounded-full pl-3 pr-4 py-2 text-xs font-medium shadow-lg hover:bg-[#222] transition-[background-color] duration-150"
+          className="flex items-center gap-2.5 rounded-full pl-3 pr-4 py-2 text-xs font-medium shadow-lg transition-opacity duration-150 hover:opacity-90"
+          style={{ background: bg, color: fg }}
         >
-          <span className="h-5 w-5 rounded-full bg-white/10 flex items-center justify-center text-[9px] font-bold shrink-0">ET</span>
+          <span
+            className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0"
+            style={{ background: fg + '22', color: fg }}
+          >
+            ET
+          </span>
           {campaign.ctaLabel ?? campaign.heading ?? 'View offer'}
           <ArrowRightIcon className="h-3 w-3 opacity-60" />
         </button>
@@ -136,8 +152,11 @@ function FloatingCard({
         {/* Header */}
         <div className="flex items-start justify-between px-4 pt-4 pb-0 gap-3">
           <div className="flex items-center gap-2.5">
-            <span className="h-7 w-7 rounded-full bg-ink flex items-center justify-center shrink-0">
-              <span className="text-white text-[9px] font-bold">ET</span>
+            <span
+              className="h-7 w-7 rounded-full flex items-center justify-center shrink-0"
+              style={{ background: bg }}
+            >
+              <span className="text-[9px] font-bold" style={{ color: fg }}>ET</span>
             </span>
             {campaign.heading && (
               <p className="text-[13px] font-semibold text-ink leading-snug">{campaign.heading}</p>
@@ -170,7 +189,8 @@ function FloatingCard({
                 target={campaign.ctaNewTab ? '_blank' : undefined}
                 rel={campaign.ctaNewTab ? 'noopener noreferrer' : undefined}
                 onClick={() => { onClick(); onConvert() }}
-                className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-[#222] transition-[background-color] duration-150"
+                className="inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition-opacity duration-150 hover:opacity-90"
+                style={{ background: bg, color: fg }}
               >
                 {campaign.ctaLabel}
                 <ArrowRightIcon className="h-3 w-3" />
@@ -200,8 +220,8 @@ function FloatingCard({
         {campaign.duration && progress > 0 && (
           <div className="h-[2px] bg-surface">
             <div
-              className="h-full bg-ink/20 transition-none"
-              style={{ width: `${progress}%` }}
+              className="h-full transition-none"
+              style={{ width: `${progress}%`, background: bg + '55' }}
             />
           </div>
         )}

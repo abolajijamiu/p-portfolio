@@ -38,6 +38,8 @@ export const campaigns = pgTable('campaigns', {
   // Display
   themeStyle: text('theme_style').default('default'),  // default | minimal | emphasis
   animation:  text('animation').default('none'),       // none | fade | slide
+  bgColor:    text('bg_color'),                        // hex e.g. #1dbf73
+  textColor:  text('text_color'),                      // hex e.g. #ffffff
 
   // Targeting
   audience:     text('audience').notNull().default('all'),    // all | authenticated | anonymous

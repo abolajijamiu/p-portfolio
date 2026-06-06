@@ -8,6 +8,27 @@
       "when": 1778868611960,
       "tag": "0000_common_night_nurse",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1780768002229,
+      "tag": "0001_smooth_stepford_cuckoos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780769037302,
+      "tag": "0002_nosy_next_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780769850585,
+      "tag": "0003_worried_black_cat",
+      "breakpoints": true
     }
   ]
 }
