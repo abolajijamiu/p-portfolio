@@ -262,22 +262,35 @@ export default async function ThemeDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Demo store note */}
-      {theme.demoStoreNote && (
+      {/* Demo store */}
+      {(theme.demoStoreUrl || theme.demoStoreNote) && (
         <div className="py-8 md:py-10 border-t border-border">
           <div className="bg-surface border border-border rounded-xl px-6 py-5 flex flex-col md:flex-row items-start md:items-center gap-5 md:gap-8">
             <div className="flex-1">
               <p className="text-[10px] font-medium text-muted uppercase tracking-wider mb-1.5">
                 Development store demo
               </p>
-              <p className="text-sm text-ink/80 leading-relaxed">{theme.demoStoreNote}</p>
+              <p className="text-sm text-ink/80 leading-relaxed">
+                {theme.demoStoreNote ?? 'A live development store is available for this theme.'}
+              </p>
             </div>
-            <Link
-              href={`/contact?theme=${theme.slug}&intent=demo`}
-              className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
-            >
-              Request demo store
-            </Link>
+            {theme.demoStoreUrl ? (
+              <a
+                href={theme.demoStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
+              >
+                View demo store
+              </a>
+            ) : (
+              <Link
+                href={`/contact?theme=${theme.slug}&intent=demo`}
+                className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
+              >
+                Request demo store
+              </Link>
+            )}
           </div>
         </div>
       )}
