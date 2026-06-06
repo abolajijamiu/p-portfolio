@@ -141,6 +141,8 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
     untilConversion:    false,
     // Sequence condition
     sequenceCondition:  'seen',
+    // Analytics
+    conversionValue: '',
   })
 
   useEffect(() => {
@@ -176,6 +178,7 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
       oncePerSession:     campaign.oncePerSession ?? false,
       untilConversion:    campaign.untilConversion ?? false,
       sequenceCondition:  campaign.sequenceCondition ?? 'seen',
+      conversionValue:    campaign.conversionValue != null ? String(campaign.conversionValue) : '',
     })
     setDirty(false)
   }, [campaign])
@@ -220,6 +223,7 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
         oncePerSession:     form.oncePerSession,
         untilConversion:    form.untilConversion,
         sequenceCondition:  form.sequenceCondition,
+        conversionValue:    form.conversionValue ? parseInt(form.conversionValue, 10) : null,
       })
       mutate(updated, false)
       setDirty(false)
@@ -489,6 +493,13 @@ export default function CampaignEditorPage({ params }: { params: Promise<Params>
             <p className="text-[11px] text-muted/60">
               Leave blank to show without limits. Set max impressions to 1 for once-only display.
             </p>
+            <Input
+              label="Conversion value (pence)"
+              type="number"
+              value={form.conversionValue}
+              onChange={(e) => update('conversionValue', e.target.value)}
+              placeholder="e.g. 9900 = £99 — leave blank if not tracking revenue"
+            />
           </section>
 
         </div>

@@ -18,6 +18,7 @@ const ADMIN_NAV = [
   { label: 'Testimonials', href: '/admin/testimonials' },
   { label: 'Inquiries', href: '/admin/inquiries' },
   { label: 'Campaigns', href: '/admin/campaigns' },
+  { label: 'Analytics', href: '/admin/analytics' },
 ]
 
 interface SidebarProps {

@@ -199,8 +199,25 @@ export type Campaign = {
   sequenceId?: string | null
   sequencePosition?: number | null
   sequenceCondition?: string | null
+  // Analytics
+  conversionValue?: number | null
   createdAt: string
   updatedAt: string
+}
+
+export type CampaignAnalyticsTrendPoint = {
+  date: string
+  impressions: number
+  clicks: number
+  conversions: number
+}
+
+export type CampaignAnalyticsBreakdown = {
+  device?: string
+  page?: string
+  impressions: number
+  clicks: number
+  conversions: number
 }
 
 export type CampaignAnalytics = {
@@ -212,6 +229,34 @@ export type CampaignAnalytics = {
   clickRate: number
   dismissRate: number
   conversionRate: number
+  attributedRevenue: number
+  trend: CampaignAnalyticsTrendPoint[]
+  devices: CampaignAnalyticsBreakdown[]
+  pages: CampaignAnalyticsBreakdown[]
+}
+
+export type CampaignOverviewRow = {
+  id: string
+  name: string
+  status: string
+  placement: string
+  impressions: number
+  uniqueViewers: number
+  clicks: number
+  conversions: number
+  ctr: number
+  conversionRate: number
+  attributedRevenue: number
+}
+
+export type CampaignOverview = {
+  totals: {
+    impressions: number
+    clicks: number
+    conversions: number
+    attributedRevenue: number
+  }
+  topCampaigns: CampaignOverviewRow[]
 }
 
 export type ProjectStatus = 'draft' | 'active' | 'review' | 'complete' | 'archived'

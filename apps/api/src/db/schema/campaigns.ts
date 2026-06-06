@@ -69,6 +69,9 @@ export const campaigns = pgTable('campaigns', {
   sequencePosition:  integer('sequence_position'),
   sequenceCondition: text('sequence_condition').default('seen'), // seen | dismissed | clicked | converted | not_converted
 
+  // Analytics
+  conversionValue: integer('conversion_value'), // cents; null = revenue not tracked
+
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   ...timestamps,
 }, (t) => ({
@@ -86,9 +89,10 @@ export const campaignEvents = pgTable('campaign_events', {
   device:     text('device'),
   createdAt:  timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
-  campaignIdx: index('campaign_events_campaign_idx').on(t.campaignId),
-  userKeyIdx:  index('campaign_events_user_key_idx').on(t.userKey),
-  typeIdx:     index('campaign_events_type_idx').on(t.eventType),
+  campaignIdx:  index('campaign_events_campaign_idx').on(t.campaignId),
+  userKeyIdx:   index('campaign_events_user_key_idx').on(t.userKey),
+  typeIdx:      index('campaign_events_type_idx').on(t.eventType),
+  createdAtIdx: index('campaign_events_created_at_idx').on(t.createdAt),
 }))
 
 export type Campaign      = typeof campaigns.$inferSelect
