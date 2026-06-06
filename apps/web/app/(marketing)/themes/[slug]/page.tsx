@@ -1,52 +1,79 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { THEMES } from '@/lib/content/themes'
 import { ArrowRightIcon } from '@/components/ui/Icons'
 import { ThemeMockup } from '@/components/marketing/ThemeMockup'
+import type { CmsTheme } from '@/types'
 
 export const revalidate = 3600
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
-async function getCheckoutUrl(slug: string): Promise<string | null> {
+// ─── Data fetching ────────────────────────────────────────────────────────────
+
+async function getPublishedThemes(): Promise<CmsTheme[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/cms/themes/published/${slug}`, { next: { revalidate: 3600 } })
-    if (!res.ok) return null
-    const data = await res.json()
-    return data.checkoutUrl ?? null
+    const res = await fetch(`${API_BASE}/api/v1/cms/themes/published`, {
+      next: { revalidate: 3600 },
+    })
+    if (!res.ok) return []
+    return res.json()
   } catch {
-    return null
+    return []
   }
 }
 
-type Props = { params: Promise<{ slug: string }> }
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const CATEGORY_INDUSTRIES: Record<string, string[]> = {
+  fashion:     ['Fashion', 'Lifestyle', 'Beauty'],
+  electronics: ['Electronics', 'Tech', 'Hardware'],
+  luxury:      ['Jewellery', 'Watches', 'Luxury goods'],
+  food:        ['Food & Drink', 'Wellness', 'Artisan'],
+  dtc:         ['D2C', 'Health', 'Consumer goods'],
+}
+
+function formatPrice(priceCents: number | null | undefined): string {
+  if (priceCents == null) return 'Custom pricing'
+  return `$${(priceCents / 100).toFixed(0)}`
+}
+
+// ─── Static params ────────────────────────────────────────────────────────────
 
 export async function generateStaticParams() {
-  return THEMES.map((t) => ({ slug: t.slug }))
+  const themes = await getPublishedThemes()
+  return themes.map((t) => ({ slug: t.slug }))
 }
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+
+type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const theme = THEMES.find((t) => t.slug === slug)
+  const themes = await getPublishedThemes()
+  const theme = themes.find((t) => t.slug === slug)
   if (!theme) return {}
   return {
-    title: `${theme.name} — Shopify Theme`,
-    description: theme.description,
+    title: theme.seoTitle ?? `${theme.name} — Shopify Theme`,
+    description: theme.seoDescription ?? theme.description ?? undefined,
     openGraph: {
       title: `${theme.name} — E-Tech. Shopify Themes`,
-      description: theme.description,
+      description: theme.description ?? undefined,
     },
   }
 }
 
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function ThemeDetailPage({ params }: Props) {
   const { slug } = await params
-  const theme = THEMES.find((t) => t.slug === slug)
+  const themes  = await getPublishedThemes()
+  const theme   = themes.find((t) => t.slug === slug)
   if (!theme) notFound()
 
-  const checkoutUrl = await getCheckoutUrl(slug)
-  const related = THEMES.filter((t) => t.slug !== slug).slice(0, 2)
+  const industries = CATEGORY_INDUSTRIES[theme.category] ?? [theme.category]
+  const related    = themes.filter((t) => t.slug !== slug).slice(0, 2)
 
   return (
     <div className="px-5 md:px-12 lg:px-20 max-w-7xl mx-auto">
@@ -64,7 +91,7 @@ export default async function ThemeDetailPage({ params }: Props) {
       <div className="pt-8 pb-10 md:pt-10 md:pb-14 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 border-b border-border">
         <div className="md:col-span-7">
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {theme.industries.map((ind) => (
+            {industries.map((ind) => (
               <span
                 key={ind}
                 className="text-[10px] font-medium text-muted/60 uppercase tracking-wider bg-surface border border-border px-2 py-0.5 rounded"
@@ -80,7 +107,7 @@ export default async function ThemeDetailPage({ params }: Props) {
         </div>
         <div className="md:col-span-5 md:col-start-8 flex flex-col justify-end gap-5">
           <div className="flex flex-wrap gap-1.5">
-            {theme.highlights.map((h) => (
+            {(theme.highlights ?? []).map((h) => (
               <span
                 key={h}
                 className="text-[11px] text-muted/70 bg-surface border border-border px-2.5 py-1 rounded"
@@ -95,7 +122,7 @@ export default async function ThemeDetailPage({ params }: Props) {
                 Starting from
               </p>
               <p className="text-2xl font-semibold text-ink tracking-tight">
-                {theme.price === 'custom' ? 'Custom pricing' : `$${theme.price}`}
+                {formatPrice(theme.priceCents)}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -106,9 +133,9 @@ export default async function ThemeDetailPage({ params }: Props) {
                 Request demo
               </Link>
               <a
-                href={checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
-                target={checkoutUrl ? '_blank' : undefined}
-                rel={checkoutUrl ? 'noopener noreferrer' : undefined}
+                href={theme.checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
+                target={theme.checkoutUrl ? '_blank' : undefined}
+                rel={theme.checkoutUrl ? 'noopener noreferrer' : undefined}
                 className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
                 Get this theme
@@ -121,8 +148,12 @@ export default async function ThemeDetailPage({ params }: Props) {
 
       {/* Preview mockup */}
       <div className="py-12 md:py-16">
-        <div className={`w-full aspect-[16/7] rounded-xl ${theme.bg} relative overflow-hidden`}>
-          <ThemeMockup theme={theme} />
+        <div className={`w-full aspect-[16/7] rounded-xl ${theme.bgClass ?? 'bg-surface'} relative overflow-hidden`}>
+          <ThemeMockup theme={{
+            slug:     theme.slug,
+            category: theme.category,
+            accent:   theme.accentColor ?? '#888888',
+          }} />
         </div>
         <p className="text-[11px] text-muted/50 mt-3 text-center">
           Wireframe representation — live preview on a development store available on request
@@ -130,31 +161,33 @@ export default async function ThemeDetailPage({ params }: Props) {
       </div>
 
       {/* Features */}
-      <div className="py-12 md:py-16 border-t border-border">
-        <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-10 md:mb-12">
-          What's included
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
-          {theme.features.map((section) => (
-            <div key={section.category} className="bg-white p-6 md:p-8">
-              <p className="text-[11px] font-medium text-muted uppercase tracking-[0.15em] mb-5">
-                {section.category}
-              </p>
-              <ul className="space-y-3">
-                {section.items.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-ink">
-                    <span className="h-px w-3 bg-muted/25 shrink-0 mt-[0.6em]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+      {(theme.features ?? []).length > 0 && (
+        <div className="py-12 md:py-16 border-t border-border">
+          <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-10 md:mb-12">
+            What's included
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
+            {(theme.features ?? []).map((section) => (
+              <div key={section.category} className="bg-white p-6 md:p-8">
+                <p className="text-[11px] font-medium text-muted uppercase tracking-[0.15em] mb-5">
+                  {section.category}
+                </p>
+                <ul className="space-y-3">
+                  {section.items.map((item) => (
+                    <li key={item} className="flex items-start gap-2.5 text-sm text-ink">
+                      <span className="h-px w-3 bg-muted/25 shrink-0 mt-[0.6em]" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Licensing */}
-      {theme.licenses && (
+      {(theme.licenses ?? []).length > 0 && (
         <div className="py-12 md:py-16 border-t border-border">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-4">
@@ -168,7 +201,7 @@ export default async function ThemeDetailPage({ params }: Props) {
             </div>
             <div className="md:col-span-7 md:col-start-6">
               <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
-                {theme.licenses.map((lic, i) => (
+                {(theme.licenses ?? []).map((lic, i) => (
                   <div key={lic.type} className={`flex items-center justify-between px-5 py-4 gap-4 ${i === 0 ? 'bg-[#fafafa]' : 'bg-white'}`}>
                     <div>
                       <p className="text-sm font-semibold text-ink tracking-tight">{lic.type}</p>
@@ -176,9 +209,9 @@ export default async function ThemeDetailPage({ params }: Props) {
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="text-base font-semibold text-ink">
-                        {lic.price === 'custom' ? 'On request' : `$${lic.price}`}
+                        {lic.priceCents == null ? 'On request' : `$${(lic.priceCents / 100).toFixed(0)}`}
                       </p>
-                      {lic.price !== 'custom' && (
+                      {lic.priceCents != null && (
                         <p className="text-[10px] text-muted/50">one-time</p>
                       )}
                     </div>
@@ -212,13 +245,13 @@ export default async function ThemeDetailPage({ params }: Props) {
             ))}
           </ul>
         </div>
-        {theme.deliveryNotes && (
+        {(theme.deliveryNotes ?? []).length > 0 && (
           <div>
             <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-5">
               What you receive
             </p>
             <ul className="space-y-2.5">
-              {theme.deliveryNotes.map((note) => (
+              {(theme.deliveryNotes ?? []).map((note) => (
                 <li key={note} className="flex items-start gap-2.5 text-sm text-ink">
                   <span className="h-px w-3 bg-muted/25 shrink-0 mt-[0.6em]" />
                   {note}
@@ -280,9 +313,9 @@ export default async function ThemeDetailPage({ params }: Props) {
             </ol>
             <div className="mt-8 pt-6 border-t border-border flex items-center gap-3">
               <a
-                href={checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
-                target={checkoutUrl ? '_blank' : undefined}
-                rel={checkoutUrl ? 'noopener noreferrer' : undefined}
+                href={theme.checkoutUrl ?? `/contact?theme=${theme.slug}&intent=purchase`}
+                target={theme.checkoutUrl ? '_blank' : undefined}
+                rel={theme.checkoutUrl ? 'noopener noreferrer' : undefined}
                 className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
               >
                 Purchase {theme.name}
@@ -299,7 +332,7 @@ export default async function ThemeDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* Other themes */}
+      {/* Related themes */}
       {related.length > 0 && (
         <div className="py-12 md:py-16 border-t border-border">
           <div className="flex items-center justify-between mb-8">
@@ -321,15 +354,17 @@ export default async function ThemeDetailPage({ params }: Props) {
                 href={`/themes/${t.slug}`}
                 className="group bg-white p-6 md:p-7 flex flex-col hover:bg-[#fafafa] transition-[background-color] duration-200"
               >
-                <div className={`w-full aspect-[16/7] rounded-lg mb-5 relative overflow-hidden ${t.bg}`}>
-                  <ThemeMockup theme={t} />
+                <div className={`w-full aspect-[16/7] rounded-lg mb-5 relative overflow-hidden ${t.bgClass ?? 'bg-surface'}`}>
+                  <ThemeMockup theme={{
+                    slug:     t.slug,
+                    category: t.category,
+                    accent:   t.accentColor ?? '#888888',
+                  }} />
                 </div>
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  {t.industries.slice(0, 2).map((ind) => (
-                    <span key={ind} className="text-[10px] font-medium text-muted/60 uppercase tracking-wider">
-                      {ind}
-                    </span>
-                  ))}
+                  <span className="text-[10px] font-medium text-muted/60 uppercase tracking-wider capitalize">
+                    {t.category}
+                  </span>
                 </div>
                 <h4 className="text-base font-semibold text-ink tracking-tight mb-1">{t.name}</h4>
                 <p className="text-sm text-muted leading-snug">{t.tagline}</p>

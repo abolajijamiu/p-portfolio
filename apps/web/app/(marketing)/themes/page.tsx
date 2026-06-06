@@ -1,7 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { THEMES, type ThemeCategory } from '@/lib/content/themes'
-import { ThemeMockup } from '@/components/marketing/ThemeMockup'
+import { ThemesClient } from './ThemesClient'
+import type { CmsTheme } from '@/types'
+
+export const revalidate = 60
 
 export const metadata: Metadata = {
   title: 'Commerce Themes',
@@ -13,16 +15,23 @@ export const metadata: Metadata = {
   },
 }
 
-const CATEGORIES: { label: string; value: ThemeCategory | 'all' }[] = [
-  { label: 'All themes', value: 'all' },
-  { label: 'Fashion', value: 'fashion' },
-  { label: 'Electronics', value: 'electronics' },
-  { label: 'Luxury', value: 'luxury' },
-  { label: 'Food & Wellness', value: 'food' },
-  { label: 'D2C', value: 'dtc' },
-]
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
 
-export default function ThemesPage() {
+async function getPublishedThemes(): Promise<CmsTheme[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/cms/themes/published`, {
+      next: { revalidate: 60 },
+    })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
+export default async function ThemesPage() {
+  const themes = await getPublishedThemes()
+
   return (
     <div className="px-5 md:px-12 lg:px-20 max-w-7xl mx-auto">
       {/* Header */}
@@ -39,90 +48,8 @@ export default function ThemesPage() {
         </p>
       </div>
 
-      {/* Category strip */}
-      <div className="flex items-center gap-2 flex-wrap pb-10 md:pb-12 border-b border-border">
-        {CATEGORIES.map((c) => (
-          <span
-            key={c.value}
-            className={[
-              'px-3 py-1.5 text-xs rounded-full border transition-[background-color,border-color,color] duration-150',
-              c.value === 'all'
-                ? 'bg-ink text-white border-ink'
-                : 'border-border text-muted hover:border-ink/40 hover:text-ink cursor-pointer',
-            ].join(' ')}
-          >
-            {c.label}
-          </span>
-        ))}
-      </div>
-
-      {/* Theme grid */}
-      <div className="py-12 md:py-16 grid grid-cols-1 md:grid-cols-2 gap-px bg-border rounded-xl overflow-hidden">
-        {THEMES.map((theme) => (
-          <div key={theme.slug} className="bg-white p-7 md:p-8 flex flex-col">
-            {/* Preview area */}
-            <div
-              className={`w-full aspect-[16/9] rounded-lg mb-6 md:mb-7 relative overflow-hidden ${theme.bg}`}
-            >
-              <ThemeMockup theme={theme} />
-            </div>
-
-            {/* Meta */}
-            <div className="flex items-center gap-2 mb-3 flex-wrap">
-              {theme.industries.map((ind) => (
-                <span
-                  key={ind}
-                  className="text-[10px] font-medium text-muted/60 uppercase tracking-wider"
-                >
-                  {ind}
-                </span>
-              ))}
-            </div>
-
-            {/* Name + tagline */}
-            <h2 className="text-xl font-semibold text-ink tracking-tight mb-1">{theme.name}</h2>
-            <p className="text-sm text-muted mb-4 leading-snug">{theme.tagline}</p>
-
-            {/* Highlights */}
-            <div className="flex flex-wrap gap-1.5 mb-6 flex-1">
-              {theme.highlights.map((h) => (
-                <span
-                  key={h}
-                  className="text-[11px] text-muted/70 bg-surface border border-border px-2 py-0.5 rounded"
-                >
-                  {h}
-                </span>
-              ))}
-            </div>
-
-            {/* Price + CTA */}
-            <div className="flex items-center justify-between pt-5 border-t border-border">
-              <div>
-                <p className="text-[10px] font-medium text-muted/50 uppercase tracking-wider mb-0.5">
-                  From
-                </p>
-                <p className="text-lg font-semibold text-ink tracking-tight">
-                  {theme.price === 'custom' ? 'Custom pricing' : `$${theme.price}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/contact"
-                  className="text-xs text-muted hover:text-ink transition-[color] duration-150 underline underline-offset-2"
-                >
-                  Request demo
-                </Link>
-                <Link
-                  href={`/themes/${theme.slug}`}
-                  className="inline-flex items-center gap-1.5 bg-ink text-white text-xs font-medium px-4 py-2 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
-                >
-                  View theme
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Category filter + theme grid (client — needs filter state) */}
+      <ThemesClient themes={themes} />
 
       {/* Custom theme CTA */}
       <div className="py-14 md:py-20 border-t border-border mt-px">
@@ -141,14 +68,12 @@ export default function ThemesPage() {
             <div className="grid grid-cols-2 gap-6 mb-7">
               {[
                 { label: 'Typical timeline', value: '6–10 weeks' },
-                { label: 'Starting from', value: '$8,000' },
-                { label: 'Includes', value: 'Full QA + documentation' },
-                { label: 'Post-launch', value: '60-day support window' },
+                { label: 'Starting from',   value: '$8,000'      },
+                { label: 'Includes',        value: 'Full QA + documentation' },
+                { label: 'Post-launch',     value: '60-day support window'   },
               ].map(({ label, value }) => (
                 <div key={label}>
-                  <p className="text-[10px] font-medium text-muted/50 uppercase tracking-wider mb-1">
-                    {label}
-                  </p>
+                  <p className="text-[10px] font-medium text-muted/50 uppercase tracking-wider mb-1">{label}</p>
                   <p className="text-sm font-medium text-ink">{value}</p>
                 </div>
               ))}

@@ -1,5 +1,3 @@
-import type { Theme } from '@/lib/content/themes'
-
 // SVG store wireframe — category-specific layout per theme
 // viewBox 0 0 800 450 (16:9). Chrome: y 0–40. Store: y 40–450.
 
@@ -349,7 +347,7 @@ function VaultLayout({ accent }: LP) {
   )
 }
 
-export function ThemeMockup({ theme }: { theme: Pick<Theme, 'slug' | 'category' | 'accent'> }) {
+export function ThemeMockup({ theme }: { theme: { slug: string; category: string; accent: string } }) {
   return (
     <svg
       viewBox="0 0 800 450"
