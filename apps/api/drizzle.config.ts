@@ -1,4 +1,7 @@
+import 'dotenv/config'
 import { defineConfig } from 'drizzle-kit'
+
+console.log('DATABASE_URL loaded:', !!process.env.DATABASE_URL)
 
 export default defineConfig({
   schema: './src/db/schema/index.ts',

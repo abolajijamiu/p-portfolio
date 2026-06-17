@@ -14,6 +14,7 @@ import { cmsInquiriesRouter } from './modules/cms/cms.inquiries.routes'
 import { cmsArticlesRouter } from './modules/cms/cms.articles.routes'
 import { chatRouter } from './modules/chat/chat.routes'
 import { campaignsRouter } from './modules/campaigns/campaigns.routes'
+import { cmsCommerceRouter, ordersRouter } from './modules/commerce/commerce.routes'
 
 export const router = Router()
 
@@ -34,3 +35,7 @@ router.use('/cms/inquiries', cmsInquiriesRouter)
 router.use('/cms/articles', cmsArticlesRouter)
 router.use('/chat', chatRouter)
 router.use('/cms/campaigns', campaignsRouter)
+router.use('/cms/commerce', cmsCommerceRouter)
+
+// Portal
+router.use('/orders', ordersRouter)

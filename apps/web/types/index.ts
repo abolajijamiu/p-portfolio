@@ -297,6 +297,7 @@ export type NotificationType =
   | 'project_status_changed'
   | 'mention'
   | 'invite_accepted'
+  | 'order_received'
 
 export type Notification = {
   id: string
@@ -306,4 +307,86 @@ export type Notification = {
   read: boolean
   link?: string | null
   createdAt: string
+}
+
+// ─── Commerce ─────────────────────────────────────────────────────────────────
+
+export type CommerceOrderStatus =
+  | 'pending'
+  | 'processing'
+  | 'completed'
+  | 'cancelled'
+  | 'refunded'
+  | 'failed'
+
+export type DeliverableStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
+
+export type DeliverableCategory = 'theme' | 'support' | 'custom_project' | 'license' | 'service'
+
+export type CommerceOrderItem = {
+  id: string
+  externalProductId: string
+  productName: string
+  priceCents: number
+  quantity: number
+}
+
+export type CommerceCustomer = {
+  id: string
+  email: string
+  name: string
+  userId?: string | null
+  createdAt: string
+}
+
+export type DeliverableType = {
+  id: string
+  name: string
+  slug: string
+  description?: string | null
+  category: DeliverableCategory
+  autoTrigger: boolean
+  createdAt: string
+}
+
+export type Deliverable = {
+  id: string
+  status: DeliverableStatus
+  deliverableType: DeliverableType
+  createdAt: string
+}
+
+export type CommerceOrder = {
+  id: string
+  status: CommerceOrderStatus
+  totalCents: number
+  currency: string
+  provider: string
+  externalId: string
+  customer: CommerceCustomer
+  items: CommerceOrderItem[]
+  deliverables?: Deliverable[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type ProductMapping = {
+  id: string
+  provider: string
+  externalProductId: string
+  deliverableTypeId: string
+  deliverableType: DeliverableType
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type WcProduct = {
+  id: number
+  name: string
+  slug: string
+  status: string
+  price: string
+  regular_price: string
+  categories: Array<{ id: number; name: string; slug: string }>
 }

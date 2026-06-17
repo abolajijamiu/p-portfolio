@@ -21,6 +21,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'project_status_changed',
   'mention',
   'invite_accepted',
+  'order_received',
 ])
 
 export const contentStatusEnum = pgEnum('content_status', [
@@ -51,4 +52,28 @@ export const articleCategoryEnum = pgEnum('article_category', [
   'seo',
   'funnel',
   'commerce',
+])
+
+export const commerceOrderStatusEnum = pgEnum('commerce_order_status', [
+  'pending',
+  'processing',
+  'completed',
+  'cancelled',
+  'refunded',
+  'failed',
+])
+
+export const deliverableStatusEnum = pgEnum('deliverable_status', [
+  'pending',
+  'in_progress',
+  'completed',
+  'cancelled',
+])
+
+export const deliverableCategoryEnum = pgEnum('deliverable_category', [
+  'theme',
+  'support',
+  'custom_project',
+  'license',
+  'service',
 ])

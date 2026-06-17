@@ -49,6 +49,35 @@ export async function sendContactEmail(params: {
   })
 }
 
+export async function sendOrderConfirmationEmail(params: {
+  to: string
+  name: string
+  orderId: string
+  totalCents: number
+  currency: string
+  deliverableCount: number
+}) {
+  const formattedTotal = `${(params.totalCents / 100).toFixed(2)} ${params.currency}`
+  const subject = `Your order has been received — ${formattedTotal}`
+
+  await resend.emails.send({
+    from: FROM,
+    to: params.to,
+    subject,
+    html: [
+      `<p>Hi ${params.name},</p>`,
+      `<p>We've received your order of <strong>${formattedTotal}</strong>. Our team will be in touch shortly.</p>`,
+      params.deliverableCount > 0
+        ? `<p>We'll deliver your ${params.deliverableCount === 1 ? 'item' : `${params.deliverableCount} items`} as soon as possible.</p>`
+        : '',
+      `<p>Your order reference: <code>${params.orderId}</code></p>`,
+      `<p>— ${process.env.EMAIL_FROM_NAME}</p>`,
+    ]
+      .filter(Boolean)
+      .join(''),
+  })
+}
+
 export async function sendInviteEmail(params: {
   to: string
   name: string

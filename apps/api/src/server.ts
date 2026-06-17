@@ -5,6 +5,7 @@ import cors from 'cors'
 import { router } from './router'
 import { errorHandler } from './middleware/error'
 import { pool } from './db/client'
+import { wcWebhookHandler } from './modules/woocommerce/woocommerce.webhooks'
 
 const app = express()
 
@@ -23,6 +24,15 @@ app.use(
     credentials: true,
   }),
 )
+
+// Webhook route must be registered BEFORE express.json() so we receive the raw
+// body buffer needed for HMAC-SHA256 signature verification.
+app.post(
+  '/api/v1/commerce/webhooks/woocommerce',
+  express.raw({ type: 'application/json' }),
+  wcWebhookHandler,
+)
+
 app.use(express.json({ limit: '256kb' }))
 app.use(cookieParser())
 

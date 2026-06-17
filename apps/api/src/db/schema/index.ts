@@ -12,6 +12,8 @@ export * from './sessions'
 export * from './invites'
 export * from './cms'
 export * from './campaigns'
+export * from './commerce'
+export * from './woocommerce'
 
 import { users } from './users'
 import { organizations } from './organizations'
@@ -121,4 +123,56 @@ export const cmsTestimonialsRelations = relations(cmsTestimonials, () => ({}))
 
 export const cmsArticlesRelations = relations(cmsArticles, ({ one }) => ({
   heroMedia: one(cmsMedia, { fields: [cmsArticles.heroMediaId], references: [cmsMedia.id] }),
+}))
+
+import {
+  commerceCustomers,
+  commerceOrderItems,
+  commerceOrders,
+  deliverableTypes,
+  deliverables,
+  productMappings,
+} from './commerce'
+
+export const commerceCustomersRelations = relations(commerceCustomers, ({ one, many }) => ({
+  organization: one(organizations, { fields: [commerceCustomers.orgId], references: [organizations.id] }),
+  user: one(users, { fields: [commerceCustomers.userId], references: [users.id] }),
+  orders: many(commerceOrders),
+  deliverables: many(deliverables),
+}))
+
+export const commerceOrdersRelations = relations(commerceOrders, ({ one, many }) => ({
+  organization: one(organizations, { fields: [commerceOrders.orgId], references: [organizations.id] }),
+  customer: one(commerceCustomers, { fields: [commerceOrders.customerId], references: [commerceCustomers.id] }),
+  items: many(commerceOrderItems),
+  deliverables: many(deliverables),
+}))
+
+export const commerceOrderItemsRelations = relations(commerceOrderItems, ({ one }) => ({
+  order: one(commerceOrders, { fields: [commerceOrderItems.orderId], references: [commerceOrders.id] }),
+}))
+
+export const deliverableTypesRelations = relations(deliverableTypes, ({ one, many }) => ({
+  organization: one(organizations, { fields: [deliverableTypes.orgId], references: [organizations.id] }),
+  mappings: many(productMappings),
+  deliverables: many(deliverables),
+}))
+
+export const productMappingsRelations = relations(productMappings, ({ one }) => ({
+  organization: one(organizations, { fields: [productMappings.orgId], references: [organizations.id] }),
+  deliverableType: one(deliverableTypes, {
+    fields: [productMappings.deliverableTypeId],
+    references: [deliverableTypes.id],
+  }),
+}))
+
+export const deliverablesRelations = relations(deliverables, ({ one }) => ({
+  organization: one(organizations, { fields: [deliverables.orgId], references: [organizations.id] }),
+  order: one(commerceOrders, { fields: [deliverables.orderId], references: [commerceOrders.id] }),
+  customer: one(commerceCustomers, { fields: [deliverables.customerId], references: [commerceCustomers.id] }),
+  deliverableType: one(deliverableTypes, {
+    fields: [deliverables.deliverableTypeId],
+    references: [deliverableTypes.id],
+  }),
+  assignee: one(users, { fields: [deliverables.assignedTo], references: [users.id] }),
 }))

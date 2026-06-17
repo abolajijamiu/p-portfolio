@@ -8,6 +8,7 @@ import { cn, initials } from '@/lib/utils'
 const NAV = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Projects', href: '/projects' },
+  { label: 'Orders', href: '/orders' },
 ]
 
 const ADMIN_NAV = [
@@ -17,6 +18,7 @@ const ADMIN_NAV = [
   { label: 'Media', href: '/admin/media' },
   { label: 'Testimonials', href: '/admin/testimonials' },
   { label: 'Inquiries', href: '/admin/inquiries' },
+  { label: 'Commerce', href: '/admin/commerce' },
   { label: 'Campaigns', href: '/admin/campaigns' },
   { label: 'Analytics', href: '/admin/analytics' },
 ]
