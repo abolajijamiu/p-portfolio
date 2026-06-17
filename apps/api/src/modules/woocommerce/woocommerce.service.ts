@@ -11,13 +11,28 @@ import type { WcOrder } from './woocommerce.types'
 export function verifySignature(rawBody: Buffer, signature: string): boolean {
   const secret = process.env.WC_WEBHOOK_SECRET
   if (!secret) {
-    console.error(JSON.stringify({ level: 'error', msg: 'WC_WEBHOOK_SECRET is not configured' }))
+    console.error(JSON.stringify({ level: 'error', msg: 'WC_WEBHOOK_SECRET not configured — rejecting webhook' }))
+    return false
+  }
+  if (!Buffer.isBuffer(rawBody) || rawBody.length === 0) {
+    console.error(JSON.stringify({ level: 'error', msg: 'Webhook raw body missing or empty — check express.raw() middleware order' }))
     return false
   }
   const expected = crypto.createHmac('sha256', secret).update(rawBody).digest('base64')
   try {
-    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
-  } catch {
+    const ok = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
+    if (!ok) {
+      console.error(JSON.stringify({
+        level: 'error',
+        msg: 'Webhook signature mismatch',
+        expectedLen: expected.length,
+        receivedLen: signature.length,
+        receivedPrefix: signature.slice(0, 8),
+      }))
+    }
+    return ok
+  } catch (err) {
+    console.error(JSON.stringify({ level: 'error', msg: 'Webhook signature comparison threw', error: String(err) }))
     return false
   }
 }

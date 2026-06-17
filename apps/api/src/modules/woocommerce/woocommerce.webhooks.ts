@@ -10,19 +10,31 @@ export async function wcWebhookHandler(req: Request, res: Response): Promise<voi
   const rawBody = req.body as Buffer
 
   const signature = req.headers['x-wc-webhook-signature'] as string | undefined
+  const topic    = req.headers['x-wc-webhook-topic'] as string | undefined
+  const delivId  = req.headers['x-wc-webhook-delivery-id'] as string | undefined
+
   if (!signature || !verifySignature(rawBody, signature)) {
+    console.error(JSON.stringify({
+      level: 'error',
+      msg: 'Webhook rejected — 401',
+      topic,
+      deliveryId: delivId,
+      hasSignature: !!signature,
+      bodyBytes: Buffer.isBuffer(rawBody) ? rawBody.length : typeof rawBody,
+      wcHeaders: Object.fromEntries(
+        Object.entries(req.headers).filter(([k]) => k.startsWith('x-wc-'))
+      ),
+    }))
     res.status(401).json({ error: 'Invalid signature' })
     return
   }
 
-  const topic = req.headers['x-wc-webhook-topic'] as string | undefined
   if (!topic || !HANDLED_TOPICS.has(topic)) {
     res.status(200).json({ ok: true }) // Unrecognised topic — acknowledge without processing
     return
   }
 
-  const deliveryId = req.headers['x-wc-webhook-delivery-id'] as string | undefined
-  if (!deliveryId) {
+  if (!delivId) {
     res.status(400).json({ error: 'Missing X-WC-Webhook-Delivery-ID' })
     return
   }
@@ -46,7 +58,7 @@ export async function wcWebhookHandler(req: Request, res: Response): Promise<voi
   res.status(200).json({ ok: true })
 
   processWebhook({
-    deliveryId,
+    deliveryId: delivId,
     webhookId: req.headers['x-wc-webhook-id'] as string | undefined,
     topic,
     payload,
