@@ -13,17 +13,19 @@ export async function wcWebhookHandler(req: Request, res: Response): Promise<voi
   const topic    = req.headers['x-wc-webhook-topic'] as string | undefined
   const delivId  = req.headers['x-wc-webhook-delivery-id'] as string | undefined
 
-  if (!signature || !verifySignature(rawBody, signature)) {
+  // WooCommerce sends a signature-less ping on webhook creation — ACK it without processing.
+  if (!signature) {
+    res.status(200).json({ ok: true })
+    return
+  }
+
+  if (!verifySignature(rawBody, signature)) {
     console.error(JSON.stringify({
       level: 'error',
-      msg: 'Webhook rejected — 401',
+      msg: 'Webhook rejected — signature mismatch',
       topic,
       deliveryId: delivId,
-      hasSignature: !!signature,
       bodyBytes: Buffer.isBuffer(rawBody) ? rawBody.length : typeof rawBody,
-      wcHeaders: Object.fromEntries(
-        Object.entries(req.headers).filter(([k]) => k.startsWith('x-wc-'))
-      ),
     }))
     res.status(401).json({ error: 'Invalid signature' })
     return
