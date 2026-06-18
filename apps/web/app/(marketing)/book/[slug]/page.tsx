@@ -29,17 +29,19 @@ async function fetchService(slug: string): Promise<BookingService | null> {
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const svc = await fetchService(params.slug)
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const svc = await fetchService(slug)
   if (!svc) return { title: 'Book a Session' }
   return {
-    title: `${svc.title} — E-Tech Digital`,
+    title: `Book: ${svc.title}`,
     description: svc.tagline,
   }
 }
 
-export default async function BookServicePage({ params }: { params: { slug: string } }) {
-  const svc = await fetchService(params.slug)
+export default async function BookServicePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const svc = await fetchService(slug)
   if (!svc) notFound()
 
   function fmtDuration(mins: number) {
