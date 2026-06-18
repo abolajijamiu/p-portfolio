@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google'
+import { Inter, Fraunces } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Providers } from './providers'
 import './globals.css'
@@ -10,17 +10,11 @@ const inter = Inter({
   display: 'swap',
 })
 
-const plusJakarta = Plus_Jakarta_Sans({
+const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
-  weight: ['400', '500', '600', '700', '800'],
-})
-
-const jetBrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
-  display: 'swap',
+  axes: ['SOFT', 'WONK'],
 })
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deempiretech.com'
@@ -28,27 +22,27 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deempiretech.com'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    template: '%s — E-Tech OS',
-    default: 'E-Tech OS — Expert Digital Services for Development, Marketing & E-commerce',
+    template: '%s — E-Tech.',
+    default: 'E-Tech. — Strategy, Design & Engineering',
   },
   description:
-    'Hire vetted expert teams for development, marketing, branding, AI, and e-commerce. Order, track, and receive work through a single managed platform.',
-  keywords: ['digital agency', 'web development', 'marketing agency', 'e-commerce', 'branding', 'AI analytics', 'managed platform'],
-  authors: [{ name: 'E-Tech OS' }],
+    'A senior team for companies that need the work to be right, not just finished. Development, marketing, branding, and e-commerce — done properly.',
+  keywords: ['digital agency', 'web development', 'marketing', 'e-commerce', 'branding', 'strategy'],
+  authors: [{ name: 'E-Tech.' }],
   openGraph: {
     type: 'website',
-    siteName: 'E-Tech OS',
-    title: 'E-Tech OS — Expert Digital Services',
+    siteName: 'E-Tech.',
+    title: 'E-Tech. — Strategy, Design & Engineering',
     description:
-      'Hire vetted expert teams for development, marketing, branding, AI, and e-commerce — all through one managed platform.',
+      'A senior team for companies that need the work to be right, not just finished.',
     url: SITE_URL,
     locale: 'en_US',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'E-Tech OS — Expert Digital Services',
+    title: 'E-Tech. — Strategy, Design & Engineering',
     description:
-      'Hire vetted expert teams for development, marketing, branding, AI, and e-commerce — all through one managed platform.',
+      'A senior team for companies that need the work to be right, not just finished.',
   },
   robots: {
     index: true,
@@ -63,7 +57,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable} ${jetBrainsMono.variable}`}>
+    <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
       <body className={inter.className}>
         <Providers>{children}</Providers>
         <Analytics />

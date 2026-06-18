@@ -33,22 +33,19 @@ const PLATFORM = [
 
 export function Footer() {
   return (
-    <footer className="bg-ink border-t border-white/[0.06]">
+    <footer className="bg-sidebar border-t border-white/[0.06]">
       <div className="px-5 md:px-10 lg:px-16 pt-14 md:pt-20 pb-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 md:gap-8 mb-14 md:mb-16">
           {/* Brand column */}
           <div className="md:col-span-2 max-w-sm">
-            <div className="flex items-center gap-2.5 mb-5">
-              <div className="w-7 h-7 rounded-lg bg-brand flex items-center justify-center">
-                <span className="text-white text-xs font-bold">E</span>
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-[13px] font-bold tracking-tight text-white">E-Tech OS</span>
-                <span className="text-[9px] font-medium tracking-[0.12em] text-white/40 uppercase">by DeEmpireTech</span>
-              </div>
+            <div className="mb-5">
+              <Link href="/" className="inline-flex flex-col leading-none gap-0.5">
+                <span className="text-[15px] font-black tracking-tight text-white uppercase">E-TECH</span>
+                <span className="text-[7.5px] font-semibold tracking-[0.18em] text-brand uppercase">Systems &amp; Solutions</span>
+              </Link>
             </div>
             <p className="text-white/50 text-sm leading-relaxed mb-6">
-              Your all-in-one digital growth partner. Strategy, design, development, and analytics — delivered by a managed team of experts.
+              A senior team for companies that need the work to be right, not just finished. Development, marketing, branding, and e-commerce — done properly.
             </p>
             <div className="flex gap-3">
               <a
@@ -124,7 +121,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="border-t border-white/[0.06] pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <p className="text-white/25 text-xs">
-            © {new Date().getFullYear()} DeEmpireTech by E-Tech. All rights reserved.
+            © {new Date().getFullYear()} E-Tech. All rights reserved.
           </p>
           <div className="flex items-center gap-5 text-xs text-white/25">
             <Link href="/privacy" className="hover:text-white/60 transition-colors duration-150">Privacy</Link>

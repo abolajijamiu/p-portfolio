@@ -5,21 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink:     '#0F172A',
-        muted:   '#64748B',
-        border:  '#E2E8F0',
-        surface: '#F5F7FA',
-        sidebar: '#0F172A',
+        // Neutrals — primary UI language
+        ink:     '#0a0a0a',
+        muted:   '#6b7280',
+        border:  '#e5e7eb',
+        surface: '#f8f8f8',
+        sidebar: '#0f0f0f',
+        // Brand — used sparingly, never decoratively
         brand: {
-          DEFAULT: '#1E3A8A',
-          light:   '#2D52C4',
-          dim:     '#EFF3FF',
-          deep:    '#162D6E',
+          DEFAULT: '#1B3FC4',
+          dim:     '#E6EBFA',
+          deep:    '#122B8A',
         },
       },
       fontFamily: {
         sans:    ['var(--font-sans)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-display)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-display)', 'Georgia', 'serif'],
         mono:    ['var(--font-mono)', 'monospace'],
       },
       keyframes: {
