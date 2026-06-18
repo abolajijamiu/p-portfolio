@@ -26,6 +26,7 @@ const INQUIRY_TYPE_LABELS: Record<string, string> = {
   project: 'New project',
   'theme-purchase': 'Theme purchase',
   'theme-demo': 'Theme demo',
+  'expert-application': 'Expert application',
   other: 'Other',
 }
 

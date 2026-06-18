@@ -15,7 +15,16 @@ export const loginSchema = z.object({
 export const inviteSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1).max(100),
-  role: z.enum(['admin', 'member', 'client']).default('client'),
+  role: z.enum(['admin', 'expert', 'member', 'client']).default('client'),
+})
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+})
+
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(72),
 })
 
 export const acceptInviteSchema = z.object({

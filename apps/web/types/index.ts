@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'admin' | 'member' | 'client'
+export type UserRole = 'owner' | 'admin' | 'expert' | 'member' | 'client'
 
 export type User = {
   id: string
@@ -137,6 +137,7 @@ export type CmsTestimonial = {
   role?: string | null
   company?: string | null
   quote: string
+  rating?: number | null
   workSlug?: string | null
   featured: boolean
   status: ContentStatus
@@ -298,6 +299,12 @@ export type NotificationType =
   | 'mention'
   | 'invite_accepted'
   | 'order_received'
+  | 'order_placed'
+  | 'order_delivered'
+  | 'order_completed'
+  | 'order_assigned'
+  | 'booking_confirmed'
+  | 'support_reply'
 
 export type Notification = {
   id: string
@@ -353,6 +360,7 @@ export type Deliverable = {
   id: string
   status: DeliverableStatus
   deliverableType: DeliverableType
+  completedAt?: string | null
   createdAt: string
 }
 

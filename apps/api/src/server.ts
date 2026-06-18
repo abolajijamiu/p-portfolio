@@ -2,10 +2,12 @@ import 'dotenv/config'
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
+import rateLimit from 'express-rate-limit'
 import { router } from './router'
 import { errorHandler } from './middleware/error'
 import { pool } from './db/client'
 import { wcWebhookHandler } from './modules/woocommerce/woocommerce.webhooks'
+import { stripeWebhookHandler } from './modules/stripe/stripe.webhooks'
 
 const app = express()
 
@@ -25,12 +27,40 @@ app.use(
   }),
 )
 
-// Webhook route must be registered BEFORE express.json() so we receive the raw
-// body buffer needed for HMAC-SHA256 signature verification.
+// Global rate limit — 300 req / 15 min per IP
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests, please try again later.' },
+  }),
+)
+
+// Strict limit on auth endpoints — 20 req / 15 min per IP
+app.use(
+  '/api/v1/auth',
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many auth attempts, please try again later.' },
+    skip: (req) => req.path === '/refresh', // refresh is safe to call often
+  }),
+)
+
+// Webhook routes must be registered BEFORE express.json() to receive the raw body buffer.
 app.post(
   '/api/v1/commerce/webhooks/woocommerce',
   express.raw({ type: 'application/json' }),
   wcWebhookHandler,
+)
+app.post(
+  '/api/v1/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  stripeWebhookHandler,
 )
 
 app.use(express.json({ limit: '256kb' }))

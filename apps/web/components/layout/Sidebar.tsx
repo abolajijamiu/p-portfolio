@@ -5,22 +5,34 @@ import { usePathname } from 'next/navigation'
 import { useAuth } from '@/lib/auth'
 import { cn, initials } from '@/lib/utils'
 
-const NAV = [
-  { label: 'Dashboard', href: '/dashboard' },
-  { label: 'Projects', href: '/projects' },
-  { label: 'Orders', href: '/orders' },
-]
-
 const ADMIN_NAV = [
+  { label: 'Users', href: '/admin/users' },
+  { label: 'Support', href: '/admin/support' },
+  { label: 'Audit Logs', href: '/admin/audit-logs' },
   { label: 'Themes', href: '/admin/themes' },
   { label: 'Work', href: '/admin/work' },
   { label: 'Articles', href: '/admin/articles' },
   { label: 'Media', href: '/admin/media' },
   { label: 'Testimonials', href: '/admin/testimonials' },
   { label: 'Inquiries', href: '/admin/inquiries' },
+  { label: 'Services', href: '/admin/services' },
+  { label: 'Service Orders', href: '/admin/service-orders' },
+  { label: 'Inbox', href: '/admin/inbox' },
+  { label: 'Bookings', href: '/admin/bookings' },
+  { label: 'Booking Services', href: '/admin/booking-services' },
+  { label: 'Booking Slots', href: '/admin/booking-slots' },
+  { label: 'Resources', href: '/admin/resources' },
+  { label: 'Downloads', href: '/admin/resource-purchases' },
+  { label: 'Payouts', href: '/admin/payouts' },
   { label: 'Commerce', href: '/admin/commerce' },
   { label: 'Campaigns', href: '/admin/campaigns' },
   { label: 'Analytics', href: '/admin/analytics' },
+]
+
+const EXPERT_NAV = [
+  { label: 'Dashboard', href: '/expert', exact: true },
+  { label: 'My Orders', href: '/expert/orders' },
+  { label: 'Earnings', href: '/expert/payouts' },
 ]
 
 interface SidebarProps {
@@ -50,6 +62,7 @@ function NavLink({ href, label, exact = false }: { href: string; label: string; 
 export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { user, logout } = useAuth()
   const isAdmin = user?.role === 'admin' || user?.role === 'owner'
+  const isExpert = user?.role === 'expert'
 
   return (
     <aside
@@ -81,6 +94,24 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       <nav aria-label="Main navigation" className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         <NavLink href="/dashboard" label="Dashboard" exact />
         <NavLink href="/projects" label="Projects" />
+        <NavLink href="/orders" label="Orders" />
+        <NavLink href="/inbox" label="Inbox" />
+        <NavLink href="/bookings" label="Bookings" />
+        <NavLink href="/purchases" label="Downloads" />
+        <NavLink href="/support" label="Support" />
+        <NavLink href="/settings/profile" label="Profile" />
+        <NavLink href="/settings/security" label="Security" />
+
+        {isExpert && (
+          <>
+            <div className="pt-4 pb-1.5 pl-3">
+              <span className="text-[10px] font-medium text-white/25 uppercase tracking-[0.15em]">Workspace</span>
+            </div>
+            {EXPERT_NAV.map(({ label, href, exact }) => (
+              <NavLink key={href} href={href} label={label} exact={exact} />
+            ))}
+          </>
+        )}
 
         {isAdmin && (
           <>

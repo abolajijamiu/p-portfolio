@@ -12,6 +12,10 @@ type NotificationMeta = {
   fileId?: string
   actorId?: string
   actorName?: string
+  orderId?: string
+  orderNumber?: string
+  bookingId?: string
+  ticketId?: string
   [key: string]: unknown
 }
 

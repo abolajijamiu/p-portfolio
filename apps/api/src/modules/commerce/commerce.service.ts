@@ -306,3 +306,28 @@ export async function deleteMapping(ctx: AccessTokenPayload, id: string) {
     .returning({ id: productMappings.id })
   if (!deleted) throw new AppError('Mapping not found', 404)
 }
+
+// ─── Deliverable fulfillment ──────────────────────────────────────────────────
+
+export async function updateDeliverableStatus(
+  ctx: AccessTokenPayload,
+  id: string,
+  status: 'in_progress' | 'completed' | 'cancelled',
+) {
+  const existing = await db.query.deliverables.findFirst({
+    where: and(eq(deliverables.id, id), eq(deliverables.orgId, ctx.orgId)),
+    columns: { id: true },
+  })
+  if (!existing) throw new AppError('Deliverable not found', 404)
+
+  const [updated] = await db
+    .update(deliverables)
+    .set({
+      status,
+      completedAt: status === 'completed' ? new Date() : null,
+      updatedAt: new Date(),
+    })
+    .where(eq(deliverables.id, id))
+    .returning()
+  return updated
+}

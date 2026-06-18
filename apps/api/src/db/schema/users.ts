@@ -1,4 +1,4 @@
-import { index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
+import { boolean, index, pgTable, text, timestamp } from 'drizzle-orm/pg-core'
 import { id, timestamps } from './common'
 
 export const users = pgTable(
@@ -11,6 +11,8 @@ export const users = pgTable(
     avatarUrl: text('avatar_url'),
     invitedAt: timestamp('invited_at', { withTimezone: true }),
     acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+    totpSecret: text('totp_secret'),
+    totpEnabled: boolean('totp_enabled').notNull().default(false),
     ...timestamps,
   },
   (t) => ({

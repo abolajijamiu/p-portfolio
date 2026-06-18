@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
 
-type Role = 'owner' | 'admin' | 'member' | 'client'
+type Role = 'owner' | 'admin' | 'expert' | 'member' | 'client'
 
 // Higher number = more access. authorize('admin') passes for owner and admin.
 const ROLE_RANK: Record<Role, number> = {
   owner: 4,
   admin: 3,
+  expert: 2,
   member: 2,
   client: 1,
 }

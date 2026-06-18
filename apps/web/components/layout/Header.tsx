@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
+import { api } from '@/lib/api'
 import { BellIcon, MenuIcon } from '@/components/ui/Icons'
 import { cn, formatRelativeDate } from '@/lib/utils'
 import type { Notification } from '@/types'
@@ -15,7 +16,8 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
-  const { data: notifications } = useSWR<Notification[]>('/notifications', {
+  const { data: notifications, mutate } = useSWR<Notification[]>('/notifications', {
+    refreshInterval: 30000,
     onErrorRetry: (err, _key, _config, revalidate, { retryCount }) => {
       if ((err as { status?: number }).status === 404) return
       if (retryCount >= 2) return
@@ -24,6 +26,16 @@ export function Header({ onMenuClick }: HeaderProps) {
   })
 
   const unread = notifications?.filter((n) => !n.read).length ?? 0
+
+  async function markRead(id: string) {
+    await api.patch(`/notifications/${id}/read`, {}).catch(() => {})
+    mutate(notifications?.map((n) => n.id === id ? { ...n, read: true } : n), false)
+  }
+
+  async function markAllRead() {
+    await api.post('/notifications/read-all', {}).catch(() => {})
+    mutate(notifications?.map((n) => ({ ...n, read: true })), false)
+  }
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
@@ -53,7 +65,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         <MenuIcon className="h-[18px] w-[18px]" />
       </button>
 
-      {/* Spacer on desktop (nothing on the left) */}
+      {/* Spacer on desktop */}
       <div className="hidden lg:block" />
 
       {/* Right: notifications */}
@@ -76,7 +88,12 @@ export function Header({ onMenuClick }: HeaderProps) {
                 Notifications
               </span>
               {unread > 0 && (
-                <span className="text-[10px] font-medium text-muted">{unread} unread</span>
+                <button
+                  onClick={markAllRead}
+                  className="text-[11px] font-medium text-brand hover:underline"
+                >
+                  Mark all read
+                </button>
               )}
             </div>
 
@@ -87,7 +104,12 @@ export function Header({ onMenuClick }: HeaderProps) {
             ) : (
               <div className="divide-y divide-border max-h-80 overflow-y-auto">
                 {notifications.map((n) => (
-                  <NotificationItem key={n.id} notification={n} onClose={() => setOpen(false)} />
+                  <NotificationItem
+                    key={n.id}
+                    notification={n}
+                    onRead={() => markRead(n.id)}
+                    onClose={() => setOpen(false)}
+                  />
                 ))}
               </div>
             )}
@@ -100,26 +122,38 @@ export function Header({ onMenuClick }: HeaderProps) {
 
 function NotificationItem({
   notification: n,
+  onRead,
   onClose,
 }: {
   notification: Notification
+  onRead: () => void
   onClose: () => void
 }) {
+  function handleClick() {
+    if (!n.read) onRead()
+    onClose()
+  }
+
   const content = (
-    <div className={cn('px-4 py-3.5 transition-[background-color] duration-150', !n.read ? 'bg-surface' : 'hover:bg-surface')}>
-      <p className="text-sm font-medium text-ink leading-snug">{n.title}</p>
-      {n.body && <p className="text-xs text-muted mt-0.5 leading-snug">{n.body}</p>}
-      <p className="text-[11px] text-muted/70 mt-1">{formatRelativeDate(n.createdAt)}</p>
+    <div className={cn('px-4 py-3.5 transition-[background-color] duration-150 cursor-pointer', !n.read ? 'bg-surface' : 'hover:bg-surface')}>
+      <div className="flex items-start gap-2">
+        {!n.read && <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-brand shrink-0" />}
+        <div className={cn('min-w-0', !n.read ? '' : 'pl-3.5')}>
+          <p className="text-sm font-medium text-ink leading-snug">{n.title}</p>
+          {n.body && <p className="text-xs text-muted mt-0.5 leading-snug">{n.body}</p>}
+          <p className="text-[11px] text-muted/70 mt-1">{formatRelativeDate(n.createdAt)}</p>
+        </div>
+      </div>
     </div>
   )
 
   if (n.link) {
     return (
-      <Link href={n.link} onClick={onClose}>
+      <Link href={n.link} onClick={handleClick}>
         {content}
       </Link>
     )
   }
 
-  return content
+  return <div onClick={handleClick}>{content}</div>
 }

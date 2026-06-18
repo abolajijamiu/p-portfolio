@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { Skeleton } from '@/components/ui/Skeleton'
-import type { CommerceOrder } from '@/types'
+import { http } from '@/lib/http'
+import type { CommerceOrder, DeliverableStatus } from '@/types'
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -38,7 +39,18 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default function AdminOrderDetailPage() {
   const { id } = useParams<{ id: string }>()
-  const { data: order, isLoading } = useSWR<CommerceOrder>(id ? `/cms/commerce/orders/${id}` : null)
+  const { data: order, isLoading, mutate } = useSWR<CommerceOrder>(id ? `/cms/commerce/orders/${id}` : null)
+  const [advancing, setAdvancing] = useState<string | null>(null)
+
+  async function advanceDeliverable(deliverableId: string, status: DeliverableStatus) {
+    setAdvancing(deliverableId)
+    try {
+      await http.patch(`/cms/commerce/deliverables/${deliverableId}/status`, { status })
+      await mutate()
+    } finally {
+      setAdvancing(null)
+    }
+  }
 
   useEffect(() => {
     document.title = order ? `Order — ${order.customer.name}` : 'Order Detail'
@@ -129,16 +141,41 @@ export default function AdminOrderDetailPage() {
                 </div>
                 <div className="divide-y divide-border">
                   {order.deliverables.map((d) => (
-                    <div key={d.id} className="flex items-center justify-between px-5 py-3.5">
-                      <div>
+                    <div key={d.id} className="flex items-center justify-between gap-4 px-5 py-3.5">
+                      <div className="min-w-0">
                         <p className="text-sm text-ink">{d.deliverableType.name}</p>
-                        <p className="text-[11px] text-muted">{d.deliverableType.category}</p>
+                        <p className="text-[11px] text-muted capitalize">{d.deliverableType.category.replace('_', ' ')}</p>
+                        {d.completedAt && (
+                          <p className="text-[11px] text-emerald-600 mt-0.5">
+                            Completed {new Date(d.completedAt).toLocaleDateString('en-GB', { dateStyle: 'medium' })}
+                          </p>
+                        )}
                       </div>
-                      <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${DELIVERABLE_STYLE[d.status] ?? 'bg-surface text-muted'}`}
-                      >
-                        {d.status.replace('_', ' ')}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span
+                          className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${DELIVERABLE_STYLE[d.status] ?? 'bg-surface text-muted'}`}
+                        >
+                          {d.status.replace('_', ' ')}
+                        </span>
+                        {d.status === 'pending' && (
+                          <button
+                            onClick={() => advanceDeliverable(d.id, 'in_progress')}
+                            disabled={advancing === d.id}
+                            className="text-[11px] font-semibold text-brand border border-brand/20 rounded-lg px-2.5 py-1 hover:bg-brand/5 disabled:opacity-50 transition-colors"
+                          >
+                            {advancing === d.id ? '…' : 'Start'}
+                          </button>
+                        )}
+                        {d.status === 'in_progress' && (
+                          <button
+                            onClick={() => advanceDeliverable(d.id, 'completed')}
+                            disabled={advancing === d.id}
+                            className="text-[11px] font-semibold text-emerald-700 border border-emerald-200 rounded-lg px-2.5 py-1 hover:bg-emerald-50 disabled:opacity-50 transition-colors"
+                          >
+                            {advancing === d.id ? '…' : 'Complete'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

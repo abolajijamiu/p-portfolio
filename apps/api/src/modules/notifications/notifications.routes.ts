@@ -25,3 +25,13 @@ notificationsRouter.patch('/:id/read', async (req, res, next) => {
     next(err)
   }
 })
+
+// POST /api/v1/notifications/read-all
+notificationsRouter.post('/read-all', async (req, res, next) => {
+  try {
+    await notificationsService.markAllRead(req.auth)
+    res.status(204).end()
+  } catch (err) {
+    next(err)
+  }
+})

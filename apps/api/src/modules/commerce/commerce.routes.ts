@@ -84,6 +84,17 @@ cmsCommerceRouter.delete('/mappings/:id', ...guard, async (req, res, next) => {
   }
 })
 
+// Deliverable status advancement
+cmsCommerceRouter.patch('/deliverables/:id/status', ...guard, async (req, res, next) => {
+  try {
+    const { id } = req.params as { id: string }
+    const { status } = req.body as { status: 'in_progress' | 'completed' | 'cancelled' }
+    res.json(await commerceService.updateDeliverableStatus(req.auth, id, status))
+  } catch (err) {
+    next(err)
+  }
+})
+
 // WooCommerce product list — proxied from WC REST API so the admin UI can
 // build mappings without needing direct WC credentials on the frontend.
 cmsCommerceRouter.get('/wc-products', ...guard, async (_req, res, next) => {

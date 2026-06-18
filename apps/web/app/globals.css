@@ -18,14 +18,25 @@ html {
 }
 
 ::selection {
-  background: #1B3FC4;
+  background: #1E3A8A;
   color: #ffffff;
 }
 
-/* Display type: Fraunces for editorial headlines only */
 .font-display {
-  font-family: var(--font-display), Georgia, serif;
-  font-optical-sizing: auto;
+  font-family: var(--font-display), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
+/* E-Tech OS design tokens */
+:root {
+  --color-brand:   #1E3A8A;
+  --color-ink:     #0F172A;
+  --color-muted:   #64748B;
+  --color-border:  #E2E8F0;
+  --color-surface: #F5F7FA;
 }
 
 /* ─── Article reading experience ─────────────────────────────── */
@@ -281,4 +292,19 @@ html {
 
 .animate-fade-up {
   animation: fade-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

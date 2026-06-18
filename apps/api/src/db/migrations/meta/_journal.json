@@ -36,6 +36,13 @@
       "when": 1781659748011,
       "tag": "0004_cheerful_kang",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1781750290088,
+      "tag": "0005_add_stripe_to_service_orders",
+      "breakpoints": true
     }
   ]
 }

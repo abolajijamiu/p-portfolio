@@ -1,12 +1,71 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { WORK, CATEGORY_LABEL } from '@/lib/content/work'
+import { WORK } from '@/lib/content/work'
 import { ArrowRightIcon } from '@/components/ui/Icons'
 import { VideoEmbed } from '@/components/marketing/VideoEmbed'
 import { AuditBlock } from '@/components/marketing/AuditBlock'
+import type { CmsWorkItem } from '@/types'
 
 type Props = { params: Promise<{ slug: string }> }
+
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+
+const CATEGORY_LABEL: Record<string, string> = {
+  redesign: 'Store Redesign',
+  theme: 'Theme Development',
+  seo: 'Commerce SEO',
+  funnel: 'Funnel Systems',
+  management: 'Store Management',
+  addon: 'Custom Add-on',
+  performance: 'Performance',
+  platform: 'Platform Build',
+  brand: 'Brand & Digital',
+  shopify: 'Shopify',
+}
+
+async function fetchAllPublished(): Promise<CmsWorkItem[]> {
+  try {
+    const res = await fetch(`${API}/cms/work/published`, { next: { revalidate: 3600 } })
+    if (!res.ok) return []
+    return res.json()
+  } catch {
+    return []
+  }
+}
+
+function staticToDisplay(w: typeof WORK[number]): CmsWorkItem {
+  const hexMatch = w.accent.match(/#([0-9a-fA-F]{3,8})/)
+  return {
+    id: w.slug,
+    slug: w.slug,
+    client: w.client,
+    headline: w.headline,
+    situation: w.situation,
+    category: w.category,
+    industry: w.industry,
+    year: typeof w.year === 'string' ? parseInt(w.year) : null,
+    duration: w.duration ?? null,
+    featured: w.featured ?? false,
+    accentColor: hexMatch ? `#${hexMatch[1]}` : '#f0f0ef',
+    scope: w.scope,
+    stack: w.stack ?? [],
+    proof: w.proof.map((p) => ({ metric: p.metric, label: p.label, ...(p.period ? { period: p.period } : {}) })),
+    proofNote: w.proofNote ?? null,
+    actions: w.actions,
+    comparisons: w.comparisons ?? [],
+    hasComparison: w.hasComparison ?? false,
+    auditFindings: w.auditFindings ?? [],
+    videoId: w.videoId ?? null,
+    videoPlatform: w.videoPlatform ?? null,
+    heroMediaId: null,
+    seoTitle: null,
+    seoDescription: null,
+    status: 'published',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+}
 
 export async function generateStaticParams() {
   return WORK.map((w) => ({ slug: w.slug }))
@@ -14,23 +73,30 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params
-  const item = WORK.find((w) => w.slug === slug)
+  const cmsItems = await fetchAllPublished()
+  const cmsItem = cmsItems.find((w) => w.slug === slug)
+  const staticItem = WORK.find((w) => w.slug === slug)
+  const item = cmsItem ?? (staticItem ? staticToDisplay(staticItem) : null)
   if (!item) return {}
   return {
-    title: `${item.client} — Case Study`,
-    description: item.headline,
+    title: item.seoTitle ?? `${item.client} — Case Study`,
+    description: item.seoDescription ?? item.headline,
     openGraph: { title: `${item.client} — E-Tech.`, description: item.headline },
   }
 }
 
 export default async function WorkDetailPage({ params }: Props) {
   const { slug } = await params
-  const item = WORK.find((w) => w.slug === slug)
+  const cmsItems = await fetchAllPublished()
+  const cmsItem = cmsItems.find((w) => w.slug === slug)
+  const staticItem = WORK.find((w) => w.slug === slug)
+  const item = cmsItem ?? (staticItem ? staticToDisplay(staticItem) : null)
   if (!item) notFound()
 
-  const related = WORK.filter(
-    (w) => w.slug !== slug && (w.category === item.category || w.featured)
-  ).slice(0, 2)
+  const allItems = cmsItems.length > 0 ? cmsItems : WORK.map(staticToDisplay)
+  const related = allItems
+    .filter((w) => w.slug !== slug && (w.category === item.category || w.featured))
+    .slice(0, 2)
 
   return (
     <div className="px-5 md:px-12 lg:px-20 max-w-7xl mx-auto">
@@ -48,12 +114,20 @@ export default async function WorkDetailPage({ params }: Props) {
       <div className="pt-8 pb-10 md:pt-10 md:pb-14 border-b border-border">
         <div className="flex flex-wrap items-center gap-2 mb-5">
           <span className="text-[10px] font-medium text-muted uppercase tracking-wider bg-surface border border-border px-2.5 py-1 rounded">
-            {CATEGORY_LABEL[item.category]}
+            {CATEGORY_LABEL[item.category] ?? item.category}
           </span>
-          <span className="text-muted/30 text-[11px]">·</span>
-          <span className="text-[11px] text-muted">{item.industry}</span>
-          <span className="text-muted/30 text-[11px]">·</span>
-          <span className="text-[11px] text-muted">{item.year}</span>
+          {item.industry && (
+            <>
+              <span className="text-muted/30 text-[11px]">·</span>
+              <span className="text-[11px] text-muted">{item.industry}</span>
+            </>
+          )}
+          {item.year && (
+            <>
+              <span className="text-muted/30 text-[11px]">·</span>
+              <span className="text-[11px] text-muted">{item.year}</span>
+            </>
+          )}
           {item.duration && (
             <>
               <span className="text-muted/30 text-[11px]">·</span>
@@ -66,18 +140,23 @@ export default async function WorkDetailPage({ params }: Props) {
           {item.headline}
         </h1>
 
-        <div className="flex flex-wrap gap-1.5">
-          {item.scope.map((s) => (
-            <span key={s} className="text-[11px] text-muted/70 bg-surface border border-border px-2.5 py-1 rounded">
-              {s}
-            </span>
-          ))}
-        </div>
+        {item.scope.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {item.scope.map((s) => (
+              <span key={s} className="text-[11px] text-muted/70 bg-surface border border-border px-2.5 py-1 rounded">
+                {s}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Visual hero */}
       <div className="py-10 md:py-12">
-        <div className={`w-full aspect-[16/7] rounded-xl ${item.accent} relative overflow-hidden`}>
+        <div
+          className="w-full aspect-[16/7] rounded-xl relative overflow-hidden"
+          style={{ backgroundColor: item.accentColor ?? '#f0f0ef' }}
+        >
           <div className="absolute inset-0 flex items-center justify-center">
             <p className="text-[13px] font-medium text-ink/30 tracking-wide">
               {item.client} — visual walkthrough available on request
@@ -87,64 +166,70 @@ export default async function WorkDetailPage({ params }: Props) {
       </div>
 
       {/* Proof metrics */}
-      <div className="py-10 md:py-12 border-t border-border">
-        <div className="flex items-start justify-between gap-4 mb-7 flex-wrap">
-          <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">
-            Results
-          </p>
-          {item.proofNote && (
-            <p className="text-[11px] text-muted/60 max-w-md leading-relaxed text-right hidden md:block">
-              {item.proofNote}
+      {item.proof.length > 0 && (
+        <div className="py-10 md:py-12 border-t border-border">
+          <div className="flex items-start justify-between gap-4 mb-7 flex-wrap">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">
+              Results
             </p>
+            {item.proofNote && (
+              <p className="text-[11px] text-muted/60 max-w-md leading-relaxed text-right hidden md:block">
+                {item.proofNote}
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
+            {item.proof.map((p) => (
+              <div key={p.label} className="bg-white px-6 md:px-8 py-7 md:py-8">
+                <p className="text-3xl md:text-4xl font-semibold text-ink tracking-tight mb-1.5">
+                  {p.metric}
+                </p>
+                <p className="text-sm text-muted leading-snug">{p.label}</p>
+                {p.period && <p className="text-[11px] text-muted/50 mt-1">{p.period}</p>}
+              </div>
+            ))}
+          </div>
+          {item.proofNote && (
+            <p className="text-[11px] text-muted/50 mt-4 leading-relaxed md:hidden">{item.proofNote}</p>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-border rounded-xl overflow-hidden">
-          {item.proof.map((p) => (
-            <div key={p.label} className="bg-white px-6 md:px-8 py-7 md:py-8">
-              <p className="text-3xl md:text-4xl font-semibold text-ink tracking-tight mb-1.5">
-                {p.metric}
-              </p>
-              <p className="text-sm text-muted leading-snug">{p.label}</p>
-              {p.period && <p className="text-[11px] text-muted/50 mt-1">{p.period}</p>}
-            </div>
-          ))}
-        </div>
-        {item.proofNote && (
-          <p className="text-[11px] text-muted/50 mt-4 leading-relaxed md:hidden">{item.proofNote}</p>
-        )}
-      </div>
+      )}
 
       {/* Situation */}
-      <div className="py-12 md:py-16 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-3">
-          <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">Situation</p>
+      {item.situation && (
+        <div className="py-12 md:py-16 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div className="md:col-span-3">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">Situation</p>
+          </div>
+          <div className="md:col-span-8 md:col-start-5">
+            <p className="text-[15px] md:text-base text-ink/80 leading-[1.8]">{item.situation}</p>
+          </div>
         </div>
-        <div className="md:col-span-8 md:col-start-5">
-          <p className="text-[15px] md:text-base text-ink/80 leading-[1.8]">{item.situation}</p>
-        </div>
-      </div>
+      )}
 
       {/* What we did */}
-      <div className="py-12 md:py-16 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-3">
-          <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">What we did</p>
+      {item.actions.length > 0 && (
+        <div className="py-12 md:py-16 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div className="md:col-span-3">
+            <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">What we did</p>
+          </div>
+          <div className="md:col-span-8 md:col-start-5">
+            <ol className="space-y-5">
+              {item.actions.map((action, i) => (
+                <li key={i} className="flex items-start gap-5">
+                  <span className="text-[11px] font-medium text-muted/40 tabular-nums w-5 shrink-0 mt-[0.25em]">
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <p className="text-[15px] text-ink/80 leading-relaxed">{action}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
-        <div className="md:col-span-8 md:col-start-5">
-          <ol className="space-y-5">
-            {item.actions.map((action, i) => (
-              <li key={i} className="flex items-start gap-5">
-                <span className="text-[11px] font-medium text-muted/40 tabular-nums w-5 shrink-0 mt-[0.25em]">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <p className="text-[15px] text-ink/80 leading-relaxed">{action}</p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </div>
+      )}
 
       {/* Before / After */}
-      {item.hasComparison && item.comparisons && (
+      {item.hasComparison && item.comparisons.length > 0 && (
         <div className="py-12 md:py-16 border-t border-border">
           <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-8 md:mb-10">
             Before / After
@@ -180,7 +265,7 @@ export default async function WorkDetailPage({ params }: Props) {
       )}
 
       {/* Tech stack */}
-      {item.stack && item.stack.length > 0 && (
+      {item.stack.length > 0 && (
         <div className="py-12 md:py-14 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-3">
             <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">
@@ -203,7 +288,7 @@ export default async function WorkDetailPage({ params }: Props) {
       )}
 
       {/* Audit findings */}
-      {item.auditFindings && item.auditFindings.length > 0 && (
+      {item.auditFindings.length > 0 && (
         <div className="py-12 md:py-16 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-3">
             <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em]">
@@ -233,7 +318,7 @@ export default async function WorkDetailPage({ params }: Props) {
           {item.videoId && item.videoPlatform ? (
             <VideoEmbed
               id={item.videoId}
-              platform={item.videoPlatform}
+              platform={item.videoPlatform as 'youtube' | 'loom' | 'vimeo'}
               title={`${item.client} — Full walkthrough`}
               caption={`${item.client} — build process, decisions, and before/after demonstration`}
             />
@@ -309,13 +394,20 @@ export default async function WorkDetailPage({ params }: Props) {
                 href={`/work/${w.slug}`}
                 className="group bg-white p-6 md:p-7 flex flex-col hover:bg-[#fafafa] transition-[background-color] duration-200"
               >
-                <div className={`w-full aspect-[16/7] rounded-lg mb-5 ${w.accent}`} />
+                <div
+                  className="w-full aspect-[16/7] rounded-lg mb-5"
+                  style={{ backgroundColor: w.accentColor ?? '#f0f0ef' }}
+                />
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[10px] font-medium text-muted uppercase tracking-wider">
-                    {CATEGORY_LABEL[w.category]}
+                    {CATEGORY_LABEL[w.category] ?? w.category}
                   </span>
-                  <span className="text-muted/30 text-[11px]">·</span>
-                  <span className="text-[11px] text-muted">{w.year}</span>
+                  {w.year && (
+                    <>
+                      <span className="text-muted/30 text-[11px]">·</span>
+                      <span className="text-[11px] text-muted">{w.year}</span>
+                    </>
+                  )}
                 </div>
                 <h4 className="text-base font-semibold text-ink tracking-tight mb-1">{w.client}</h4>
                 <p className="text-sm text-muted leading-relaxed">{w.headline}</p>

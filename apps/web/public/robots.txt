@@ -1,7 +1,18 @@
 User-agent: *
 Allow: /
+
 Disallow: /dashboard
 Disallow: /projects
+Disallow: /orders
+Disallow: /inbox
+Disallow: /bookings
+Disallow: /purchases
+Disallow: /support
+Disallow: /settings
+Disallow: /expert
+Disallow: /admin
 Disallow: /login
+Disallow: /forgot-password
+Disallow: /api/
 
 Sitemap: https://deempiretech.com/sitemap.xml

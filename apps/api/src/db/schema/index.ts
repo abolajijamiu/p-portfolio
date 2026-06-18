@@ -14,6 +14,13 @@ export * from './cms'
 export * from './campaigns'
 export * from './commerce'
 export * from './woocommerce'
+export * from './services'
+export * from './resources'
+export * from './bookings'
+export * from './payouts'
+export * from './audit'
+export * from './support'
+export * from './password-resets'
 
 import { users } from './users'
 import { organizations } from './organizations'
@@ -24,6 +31,8 @@ import { files } from './files'
 import { notifications } from './notifications'
 import { sessions } from './sessions'
 import { invites } from './invites'
+import { serviceOrders } from './services'
+import { resourcePurchases } from './resources'
 
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(memberships),
@@ -33,6 +42,9 @@ export const usersRelations = relations(users, ({ many }) => ({
   uploadedFiles: many(files, { relationName: 'fileUploader' }),
   notifications: many(notifications),
   sentInvites: many(invites, { relationName: 'inviteSender' }),
+  clientOrders: many(serviceOrders, { relationName: 'soClient' }),
+  expertOrders: many(serviceOrders, { relationName: 'soExpert' }),
+  resourcePurchases: many(resourcePurchases),
 }))
 
 export const organizationsRelations = relations(organizations, ({ many }) => ({
@@ -105,7 +117,7 @@ export const invitesRelations = relations(invites, ({ one }) => ({
   }),
 }))
 
-import { cmsMedia, cmsThemes, cmsWork, cmsTestimonials, cmsArticles } from './cms'
+import { cmsMedia, cmsThemes, cmsWork, cmsTestimonials, cmsArticles, testimonialRequests } from './cms'
 
 export const cmsMediaRelations = relations(cmsMedia, ({ one }) => ({
   uploadedBy: one(users, { fields: [cmsMedia.uploadedBy], references: [users.id] }),
@@ -120,6 +132,10 @@ export const cmsWorkRelations = relations(cmsWork, ({ one }) => ({
 }))
 
 export const cmsTestimonialsRelations = relations(cmsTestimonials, () => ({}))
+
+export const testimonialRequestsRelations = relations(testimonialRequests, ({ one }) => ({
+  client: one(users, { fields: [testimonialRequests.clientId], references: [users.id] }),
+}))
 
 export const cmsArticlesRelations = relations(cmsArticles, ({ one }) => ({
   heroMedia: one(cmsMedia, { fields: [cmsArticles.heroMediaId], references: [cmsMedia.id] }),
@@ -175,4 +191,140 @@ export const deliverablesRelations = relations(deliverables, ({ one }) => ({
     references: [deliverableTypes.id],
   }),
   assignee: one(users, { fields: [deliverables.assignedTo], references: [users.id] }),
+}))
+
+// ─── Services relations ───────────────────────────────────────────────────────
+
+import {
+  services,
+  servicePackages,
+  serviceFaqs,
+  serviceRequirements,
+  serviceOrderMessages,
+  serviceOrderMilestones,
+  serviceOrderDeliveries,
+} from './services'
+
+export const servicesRelations = relations(services, ({ many }) => ({
+  packages: many(servicePackages),
+  faqs: many(serviceFaqs),
+  requirements: many(serviceRequirements),
+  orders: many(serviceOrders),
+}))
+
+export const servicePackagesRelations = relations(servicePackages, ({ one, many }) => ({
+  service: one(services, { fields: [servicePackages.serviceId], references: [services.id] }),
+  orders: many(serviceOrders),
+}))
+
+export const serviceFaqsRelations = relations(serviceFaqs, ({ one }) => ({
+  service: one(services, { fields: [serviceFaqs.serviceId], references: [services.id] }),
+}))
+
+export const serviceRequirementsRelations = relations(serviceRequirements, ({ one }) => ({
+  service: one(services, { fields: [serviceRequirements.serviceId], references: [services.id] }),
+}))
+
+export const serviceOrdersRelations = relations(serviceOrders, ({ one, many }) => ({
+  service: one(services, { fields: [serviceOrders.serviceId], references: [services.id] }),
+  package: one(servicePackages, { fields: [serviceOrders.packageId], references: [servicePackages.id] }),
+  client: one(users, { fields: [serviceOrders.clientId], references: [users.id], relationName: 'soClient' }),
+  expert: one(users, { fields: [serviceOrders.assignedExpertId], references: [users.id], relationName: 'soExpert' }),
+  messages: many(serviceOrderMessages),
+  milestones: many(serviceOrderMilestones),
+  deliveries: many(serviceOrderDeliveries),
+}))
+
+export const serviceOrderMessagesRelations = relations(serviceOrderMessages, ({ one }) => ({
+  order: one(serviceOrders, { fields: [serviceOrderMessages.orderId], references: [serviceOrders.id] }),
+  sender: one(users, { fields: [serviceOrderMessages.senderId], references: [users.id] }),
+}))
+
+export const serviceOrderMilestonesRelations = relations(serviceOrderMilestones, ({ one }) => ({
+  order: one(serviceOrders, { fields: [serviceOrderMilestones.orderId], references: [serviceOrders.id] }),
+}))
+
+export const serviceOrderDeliveriesRelations = relations(serviceOrderDeliveries, ({ one }) => ({
+  order: one(serviceOrders, { fields: [serviceOrderDeliveries.orderId], references: [serviceOrders.id] }),
+  deliveredBy: one(users, { fields: [serviceOrderDeliveries.deliveredBy], references: [users.id] }),
+}))
+
+// ─── Resources relations ──────────────────────────────────────────────────────
+
+import {
+  resources,
+  resourceLicenses,
+  resourceFiles,
+} from './resources'
+
+export const resourcesRelations = relations(resources, ({ many }) => ({
+  licenses: many(resourceLicenses),
+  files: many(resourceFiles),
+  purchases: many(resourcePurchases),
+}))
+
+export const resourceLicensesRelations = relations(resourceLicenses, ({ one, many }) => ({
+  resource: one(resources, { fields: [resourceLicenses.resourceId], references: [resources.id] }),
+  purchases: many(resourcePurchases),
+}))
+
+export const resourceFilesRelations = relations(resourceFiles, ({ one }) => ({
+  resource: one(resources, { fields: [resourceFiles.resourceId], references: [resources.id] }),
+}))
+
+export const resourcePurchasesRelations = relations(resourcePurchases, ({ one }) => ({
+  user: one(users, { fields: [resourcePurchases.userId], references: [users.id] }),
+  resource: one(resources, { fields: [resourcePurchases.resourceId], references: [resources.id] }),
+  license: one(resourceLicenses, { fields: [resourcePurchases.licenseId], references: [resourceLicenses.id] }),
+}))
+
+// ─── Bookings relations ───────────────────────────────────────────────────────
+
+import { bookingServices, bookingSlots, bookings } from './bookings'
+
+export const bookingServicesRelations = relations(bookingServices, ({ many }) => ({
+  slots: many(bookingSlots),
+  bookings: many(bookings),
+}))
+
+export const bookingSlotsRelations = relations(bookingSlots, ({ one }) => ({
+  service: one(bookingServices, { fields: [bookingSlots.bookingServiceId], references: [bookingServices.id] }),
+  booking: one(bookings),
+}))
+
+export const bookingsRelations = relations(bookings, ({ one }) => ({
+  service: one(bookingServices, { fields: [bookings.bookingServiceId], references: [bookingServices.id] }),
+  slot: one(bookingSlots, { fields: [bookings.slotId], references: [bookingSlots.id] }),
+  client: one(users, { fields: [bookings.clientId], references: [users.id] }),
+}))
+
+// ─── Payouts relations ────────────────────────────────────────────────────────
+
+import { expertPayouts } from './payouts'
+
+export const expertPayoutsRelations = relations(expertPayouts, ({ one }) => ({
+  expert: one(users, { fields: [expertPayouts.expertId], references: [users.id] }),
+  order: one(serviceOrders, { fields: [expertPayouts.orderId], references: [serviceOrders.id] }),
+}))
+
+// ─── Audit relations ──────────────────────────────────────────────────────────
+
+import { auditLogs } from './audit'
+
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  actor: one(users, { fields: [auditLogs.actorId], references: [users.id] }),
+}))
+
+// ─── Support relations ────────────────────────────────────────────────────────
+
+import { supportTickets, supportTicketMessages } from './support'
+
+export const supportTicketsRelations = relations(supportTickets, ({ one, many }) => ({
+  user: one(users, { fields: [supportTickets.userId], references: [users.id] }),
+  messages: many(supportTicketMessages),
+}))
+
+export const supportTicketMessagesRelations = relations(supportTicketMessages, ({ one }) => ({
+  ticket: one(supportTickets, { fields: [supportTicketMessages.ticketId], references: [supportTickets.id] }),
+  sender: one(users, { fields: [supportTicketMessages.senderId], references: [users.id] }),
 }))

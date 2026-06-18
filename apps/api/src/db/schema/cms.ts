@@ -143,6 +143,7 @@ export const cmsTestimonials = pgTable(
     role: text('role'),
     company: text('company'),
     quote: text('quote').notNull(),
+    rating: integer('rating'),                 // 1–5 stars, optional
     workSlug: text('work_slug'),               // loose reference — no FK to allow deletion
     featured: boolean('featured').notNull().default(false),
     status: contentStatusEnum('status').notNull().default('draft'),
@@ -155,6 +156,31 @@ export const cmsTestimonials = pgTable(
 
 export type CmsTestimonial = typeof cmsTestimonials.$inferSelect
 export type NewCmsTestimonial = typeof cmsTestimonials.$inferInsert
+
+// ─── Testimonial requests (admin-triggered, tokenised invite to leave a review) ─
+
+export const testimonialRequests = pgTable(
+  'testimonial_requests',
+  {
+    ...id,
+    orderId: uuid('order_id').notNull(),            // loose ref to serviceOrders.id
+    clientId: uuid('client_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+    clientName: text('client_name').notNull(),
+    clientEmail: text('client_email').notNull(),
+    serviceTitle: text('service_title').notNull(),
+    token: text('token').notNull().unique(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    tokenIdx: index('testimonial_requests_token_idx').on(t.token),
+    clientIdx: index('testimonial_requests_client_idx').on(t.clientId),
+  }),
+)
+
+export type TestimonialRequest = typeof testimonialRequests.$inferSelect
+export type NewTestimonialRequest = typeof testimonialRequests.$inferInsert
 
 // ─── Inquiries (contact form submissions) ─────────────────────────────────────
 

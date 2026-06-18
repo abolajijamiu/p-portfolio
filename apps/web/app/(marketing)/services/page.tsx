@@ -1,170 +1,215 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRightIcon } from '@/components/ui/Icons'
+import { ArrowRightIcon, CheckIcon, CalendarIcon } from '@/components/ui/Icons'
 
 export const metadata: Metadata = {
   title: 'Services',
   description:
-    'Commerce design and build, conversion systems, SEO, integrations, and strategy. Each discipline practiced at senior level.',
+    'Hire expert teams for development, marketing, branding, AI, and e-commerce. Browse service packages, select what you need, and track delivery through your dashboard.',
   openGraph: {
-    title: 'Services — E-Tech.',
-    description: 'Commerce design, conversion, SEO, and systems integration. Done properly.',
+    title: 'Services — E-Tech OS',
+    description: 'Expert teams for every digital discipline. Browse packages and get started today.',
   },
 }
 
-const SERVICES = [
-  {
-    number: '01',
-    title: 'Commerce Design & Build',
-    description:
-      "We build Shopify stores, headless commerce experiences, and custom themes from scratch. Not from a template, not reskinned. We start with your category, your customer, and how they buy — and build the architecture around that. Every store we ship has the infrastructure to grow with the business.",
-    deliverables: [
-      'Custom Shopify theme development',
-      'Headless / composable commerce',
-      'Store migration and rebuild',
-      'Checkout optimisation',
-    ],
-  },
-  {
-    number: '02',
-    title: 'Conversion & Funnels',
-    description:
-      "The traffic is there. The product works. The gap is in what happens between the first visit and the repeat purchase. We build email flows, post-purchase sequences, subscription systems, and abandoned cart recovery — the full funnel, wired together and measured. Revenue from customers you already have.",
-    deliverables: [
-      'Email flow architecture (Klaviyo)',
-      'Post-purchase and replenishment flows',
-      'Subscription setup (Recharge)',
-      'A/B testing and CRO',
-    ],
-  },
-  {
-    number: '03',
-    title: 'Commerce SEO',
-    description:
-      "Most eCommerce SEO work is shallow. We go forensic — crawl budget, indexation, cannibalization, schema, Core Web Vitals, category architecture, internal linking. We find what's keeping you off page one and fix it systematically. The results compound over time because the structure is built correctly.",
-    deliverables: [
-      'Technical SEO audit',
-      'Category architecture rebuild',
-      'Schema and structured data',
-      'Content strategy and buyer guides',
-    ],
-  },
-  {
-    number: '04',
-    title: 'Systems & Integrations',
-    description:
-      "Growth breaks manual processes. We connect Shopify to the systems around it — ERPs, 3PLs, B2B portals, returns platforms, accounting software. Custom middleware where necessary. The goal is an operational infrastructure that doesn't require your team to intervene on things a computer should handle.",
-    deliverables: [
-      '3PL and ERP integration',
-      'Custom B2B portal development',
-      'Returns automation (Loop)',
-      'Operational audit and documentation',
-    ],
-  },
-  {
-    number: '05',
-    title: 'Strategy',
-    description:
-      "Before we write a line of code or design a single screen, we understand the business. Where the revenue comes from, where it's being lost, and what the right next move is. We work back from the number you need to hit, not the deliverable you came in asking for. Sometimes the brief is right. Often it isn't.",
-    deliverables: [
-      'Commerce audit and opportunity mapping',
-      'Competitive and market research',
-      'Technology stack advisory',
-      'Go-to-market strategy',
-    ],
-  },
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+
+type Service = {
+  id: string
+  slug: string
+  title: string
+  tagline: string
+  category: string
+  featured: boolean
+  packages?: { priceCents: number; name: string; deliveryDays: number }[]
+}
+
+const CATEGORY_META: Record<string, { label: string; color: string; bg: string }> = {
+  development:  { label: 'Development',  color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-100' },
+  marketing:    { label: 'Marketing',    color: 'text-purple-700', bg: 'bg-purple-50 border-purple-100' },
+  branding:     { label: 'Branding',     color: 'text-rose-700',   bg: 'bg-rose-50 border-rose-100' },
+  ai_analytics: { label: 'AI & Analytics', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100' },
+  ecommerce:    { label: 'E-commerce',   color: 'text-orange-700', bg: 'bg-orange-50 border-orange-100' },
+  consulting:   { label: 'Consulting',   color: 'text-sky-700',    bg: 'bg-sky-50 border-sky-100' },
+  publishing:   { label: 'Publishing',   color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-100' },
+  technical:    { label: 'Technical',    color: 'text-slate-700',  bg: 'bg-slate-50 border-slate-100' },
+  premium:      { label: 'Premium',      color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-100' },
+}
+
+const STATIC_FALLBACK: Service[] = [
+  { id: '1', slug: 'shopify-store-development', title: 'Shopify Store Development', tagline: 'Custom Shopify stores built to convert and scale.', category: 'development', featured: true },
+  { id: '2', slug: 'seo-strategy-and-execution', title: 'SEO Strategy & Execution', tagline: 'Organic growth that compounds month over month.', category: 'marketing', featured: true },
+  { id: '3', slug: 'brand-identity-design', title: 'Brand Identity Design', tagline: 'Identity systems that command trust and recognition.', category: 'branding', featured: true },
+  { id: '4', slug: 'analytics-reporting-service', title: 'Analytics Reporting Service', tagline: 'Data that drives decisions, delivered on a schedule.', category: 'ai_analytics', featured: true },
+  { id: '5', slug: 'ecommerce-conversion-optimisation', title: 'E-commerce Conversion Optimisation', tagline: 'More revenue from the traffic you already have.', category: 'ecommerce', featured: false },
 ]
 
-export default function ServicesPage() {
-  return (
-    <div className="px-5 md:px-12 lg:px-20 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="pt-12 pb-10 md:pt-20 md:pb-16 border-b border-border">
-        <p className="text-[11px] font-medium text-muted uppercase tracking-[0.2em] mb-4 md:mb-5">
-          Services
-        </p>
-        <h1 className="font-display text-[clamp(2rem,4vw,3.75rem)] font-normal tracking-tight text-ink leading-tight max-w-2xl">
-          Commerce work, done properly.
-        </h1>
-        <p className="text-muted text-[15px] mt-4 md:mt-5 max-w-lg leading-relaxed">
-          We work across the full eCommerce stack — from store architecture
-          to post-purchase retention. Each service is practiced at a senior
-          level, grounded in evidence, and measured against actual revenue.
-        </p>
-      </div>
+async function fetchServices(): Promise<Service[]> {
+  try {
+    const res = await fetch(`${API}/services`, { next: { revalidate: 3600 } })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data) && data.length > 0) return data
+    }
+  } catch { /* fall through */ }
+  return STATIC_FALLBACK
+}
 
-      {/* Services list */}
-      <div className="divide-y divide-border">
-        {SERVICES.map((service) => (
-          <div key={service.number} className="py-12 md:py-16 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-            <div className="md:col-span-4">
-              <span className="text-[11px] font-medium text-muted/40 tabular-nums block mb-2.5 md:mb-3">
-                {service.number}
-              </span>
-              <h2 className="text-xl font-semibold text-ink tracking-tight">{service.title}</h2>
-            </div>
-            <div className="md:col-span-8">
-              <p className="text-[15px] text-muted leading-relaxed mb-7 md:mb-8">{service.description}</p>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
-                {service.deliverables.map((d) => (
-                  <li key={d} className="flex items-center gap-2.5 text-sm text-ink">
-                    <span className="h-px w-3 bg-muted/25 shrink-0" />
-                    {d}
-                  </li>
-                ))}
-              </ul>
+function priceFrom(service: Service) {
+  if (!service.packages?.length) return null
+  const min = Math.min(...service.packages.map((p) => p.priceCents))
+  return `From $${(min / 100).toLocaleString()}`
+}
+
+function fastestDelivery(service: Service) {
+  if (!service.packages?.length) return null
+  const min = Math.min(...service.packages.map((p) => p.deliveryDays))
+  return `${min} days`
+}
+
+export default async function ServicesPage() {
+  const services = await fetchServices()
+  const featured = services.filter((s) => s.featured)
+  const byCategory = services.reduce<Record<string, Service[]>>((acc, s) => {
+    ;(acc[s.category] ||= []).push(s)
+    return acc
+  }, {})
+
+  return (
+    <>
+      {/* Header */}
+      <section className="bg-white border-b border-border">
+        <div className="px-5 md:px-10 lg:px-16 py-16 md:py-24 max-w-7xl mx-auto">
+          <div className="max-w-3xl">
+            <p className="text-[11px] font-semibold text-brand uppercase tracking-[0.18em] mb-4">Services Marketplace</p>
+            <h1 className="font-display text-[clamp(2rem,4.5vw,4rem)] font-bold tracking-tight text-ink leading-[1.05] mb-5">
+              Every discipline.<br />One expert team.
+            </h1>
+            <p className="text-base md:text-lg text-muted leading-relaxed mb-8 max-w-2xl">
+              Browse our service catalogue, choose a package that fits your scope, and place your order.
+              We handle expert assignment, delivery tracking, and revisions — all through your client portal.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/book"
+                className="inline-flex items-center gap-2 border border-border text-ink text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-surface transition-colors duration-150"
+              >
+                <CalendarIcon className="h-4 w-4 text-brand" />
+                Book a strategy call first
+              </Link>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      {/* Themes CTA */}
-      <div className="py-14 md:py-20 border-t border-border grid grid-cols-1 md:grid-cols-12 gap-8">
-        <div className="md:col-span-5">
-          <h3 className="text-base font-semibold text-ink tracking-tight mb-2">
-            Looking for a ready-made Shopify theme?
-          </h3>
-          <p className="text-sm text-muted leading-relaxed">
-            We sell five themes built for specific commerce categories.
-            Each one is built from scratch for its category — not a generic
-            template with a new colour palette.
-          </p>
+      {/* Featured */}
+      {featured.length > 0 && (
+        <section className="bg-surface border-b border-border">
+          <div className="px-5 md:px-10 lg:px-16 py-14 md:py-20 max-w-7xl mx-auto">
+            <p className="text-[11px] font-semibold text-brand uppercase tracking-[0.18em] mb-10">Most Popular</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {featured.map((service) => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* By category */}
+      <section className="bg-white">
+        <div className="px-5 md:px-10 lg:px-16 py-14 md:py-20 max-w-7xl mx-auto space-y-16">
+          {Object.entries(byCategory).map(([cat, catServices]) => {
+            const meta = CATEGORY_META[cat] ?? { label: cat, color: 'text-muted', bg: 'bg-surface border-border' }
+            return (
+              <div key={cat} id={cat}>
+                <div className="flex items-center gap-3 mb-8">
+                  <span className={`text-[11px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md border ${meta.bg} ${meta.color}`}>
+                    {meta.label}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {catServices.map((service) => (
+                    <ServiceCard key={service.id} service={service} />
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        <div className="md:col-span-5 md:col-start-8 flex items-center gap-4">
-          <Link
-            href="/themes"
-            className="inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
-          >
-            Browse themes
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
-          <Link
-            href="/contact"
-            className="text-sm text-muted hover:text-ink transition-[color] duration-150"
-          >
-            Custom project
-          </Link>
-        </div>
-      </div>
+      </section>
 
       {/* CTA */}
-      <div className="py-14 md:py-20 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 md:gap-6">
-        <div>
-          <h3 className="text-base font-semibold text-ink tracking-tight mb-1.5">
-            Not sure which service you need?
-          </h3>
-          <p className="text-sm text-muted">
-            Tell us what's not working. We'll identify where the problem actually is.
-          </p>
+      <section className="bg-brand border-t border-brand-deep">
+        <div className="px-5 md:px-10 lg:px-16 py-16 md:py-20 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-white leading-tight mb-3">
+                Not sure what you need?
+              </h2>
+              <p className="text-white/60 text-sm md:text-base leading-relaxed">
+                Book a free 30-minute strategy call. We&apos;ll identify the right service, right package, and right starting point for your goals.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3 md:justify-end">
+              <Link
+                href="/book"
+                className="inline-flex items-center gap-2 bg-white text-ink text-sm font-bold px-6 py-3 rounded-lg hover:bg-surface transition-colors duration-150"
+              >
+                Book Free Call <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 border border-white/25 text-white text-sm font-medium px-6 py-3 rounded-lg hover:bg-white/10 transition-colors duration-150"
+              >
+                Send a message
+              </Link>
+            </div>
+          </div>
         </div>
-        <Link
-          href="/contact"
-          className="shrink-0 inline-flex items-center gap-2 bg-ink text-white text-sm font-medium px-5 py-2.5 rounded-md hover:bg-[#222] transition-[background-color] duration-150"
-        >
-          Get in touch
-          <ArrowRightIcon className="h-3.5 w-3.5" />
-        </Link>
+      </section>
+    </>
+  )
+}
+
+function ServiceCard({ service }: { service: Service }) {
+  const meta = CATEGORY_META[service.category] ?? { label: service.category, color: 'text-muted', bg: 'bg-surface border-border' }
+  const price = priceFrom(service)
+  const delivery = fastestDelivery(service)
+
+  return (
+    <Link
+      href={`/services/${service.slug}`}
+      className="group flex flex-col bg-white border border-border rounded-xl p-6 hover:border-brand/30 hover:shadow-lg hover:shadow-brand/[0.06] transition-all duration-200"
+    >
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${meta.bg} ${meta.color}`}>
+          {meta.label}
+        </span>
+        {price && (
+          <span className="text-xs font-semibold text-ink/70 shrink-0">{price}</span>
+        )}
       </div>
-    </div>
+
+      <h3 className="text-[15px] font-semibold text-ink tracking-tight mb-2 leading-snug group-hover:text-brand transition-colors duration-150">
+        {service.title}
+      </h3>
+      <p className="text-sm text-muted leading-relaxed flex-1 mb-5">{service.tagline}</p>
+
+      <div className="flex items-center justify-between pt-4 border-t border-border">
+        <div className="flex items-center gap-3 text-xs text-muted">
+          {delivery && (
+            <span className="flex items-center gap-1">
+              <CheckIcon className="h-3 w-3 text-emerald-500" />
+              From {delivery}
+            </span>
+          )}
+        </div>
+        <span className="text-xs font-semibold text-brand flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          View packages <ArrowRightIcon className="h-3 w-3" />
+        </span>
+      </div>
+    </Link>
   )
 }

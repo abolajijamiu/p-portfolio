@@ -14,6 +14,7 @@ type AuthState = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
+  refetch: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | null>(null)
@@ -72,6 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/dashboard')
   }
 
+  async function refetch() {
+    try {
+      const me = await api.get<User>('/users/me')
+      setUser(me)
+    } catch {
+      // swallow
+    }
+  }
+
   async function logout() {
     await axios
       .post(`${BASE}/api/v1/auth/logout`, {}, { withCredentials: true })
@@ -82,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refetch }}>
       {children}
     </AuthContext.Provider>
   )

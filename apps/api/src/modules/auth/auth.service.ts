@@ -1,11 +1,11 @@
 import { and, eq, gt } from 'drizzle-orm'
 import crypto from 'crypto'
 import { db } from '../../db/client'
-import { invites, memberships, organizations, sessions, users } from '../../db/schema'
-import { hashPassword, sha256, verifyPassword } from '../../lib/crypto'
-import { sendInviteEmail } from '../../lib/email'
+import { invites, memberships, organizations, passwordResets, sessions, users } from '../../db/schema'
+import { hashPassword, sha256, verifyPassword, randomToken } from '../../lib/crypto'
+import { sendInviteEmail, sendPasswordResetEmail } from '../../lib/email'
 import { AppError } from '../../lib/errors'
-import { generateInviteToken, generateRefreshToken, signAccessToken } from '../../lib/tokens'
+import { generateInviteToken, generateRefreshToken, signAccessToken, signPendingTotpToken } from '../../lib/tokens'
 import type { AccessTokenPayload } from '../../lib/tokens'
 import type {
   AcceptInviteInput,
@@ -18,6 +18,11 @@ type AuthResult = {
   accessToken: string
   refreshToken: string
   user: { id: string; email: string; name: string }
+}
+
+type TotpChallengeResult = {
+  requires2FA: true
+  pendingToken: string
 }
 
 // ─── register ────────────────────────────────────────────────────────────────
@@ -56,7 +61,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 
 // ─── login ───────────────────────────────────────────────────────────────────
 
-export async function login(input: LoginInput): Promise<AuthResult> {
+export async function login(input: LoginInput): Promise<AuthResult | TotpChallengeResult> {
   const user = await db.query.users.findFirst({
     where: eq(users.email, input.email),
     with: { memberships: { columns: { orgId: true, role: true } } },
@@ -74,10 +79,34 @@ export async function login(input: LoginInput): Promise<AuthResult> {
   const membership = user.memberships[0]
   if (!membership) throw new AppError('Account has no organization', 403)
 
-  return issueSession(
-    { sub: user.id, orgId: membership.orgId, role: membership.role },
-    { id: user.id, email: user.email, name: user.name },
-  )
+  const sessionPayload = { sub: user.id, orgId: membership.orgId, role: membership.role }
+
+  if (user.totpEnabled) {
+    return {
+      requires2FA: true,
+      pendingToken: signPendingTotpToken(sessionPayload),
+    }
+  }
+
+  return issueSession(sessionPayload, { id: user.id, email: user.email, name: user.name })
+}
+
+// ─── verifyTotpLogin ─────────────────────────────────────────────────────────
+
+export async function verifyTotpLogin(
+  pendingPayload: { sub: string; orgId: string; role: string },
+  code: string,
+): Promise<AuthResult> {
+  const user = await db.query.users.findFirst({
+    where: eq(users.id, pendingPayload.sub),
+    columns: { id: true, email: true, name: true, totpSecret: true, totpEnabled: true },
+  })
+  if (!user?.totpEnabled || !user.totpSecret) throw new AppError('2FA not configured', 400)
+
+  const { verifyTotp } = await import('../../lib/totp')
+  if (!verifyTotp(code, user.totpSecret)) throw new AppError('Invalid authenticator code', 401)
+
+  return issueSession(pendingPayload, { id: user.id, email: user.email, name: user.name })
 }
 
 // ─── refresh ─────────────────────────────────────────────────────────────────
@@ -95,6 +124,7 @@ export async function refresh(rawToken: string): Promise<{ accessToken: string }
 
   const accessToken = signAccessToken({
     sub: session.userId,
+    userId: session.userId,
     orgId: session.orgId,
     role: session.role,
   })
@@ -191,10 +221,55 @@ export async function acceptInvite(input: AcceptInviteInput): Promise<AuthResult
   return issueSession({ sub: user.id, orgId: invite.orgId, role: invite.role }, user)
 }
 
+// ─── forgotPassword ───────────────────────────────────────────────────────────
+
+export async function forgotPassword(email: string): Promise<void> {
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email.toLowerCase().trim()),
+    columns: { id: true, name: true, email: true, passwordHash: true },
+  })
+
+  // Always wait a bcrypt-like delay to prevent email enumeration via timing
+  if (!user?.passwordHash) {
+    await new Promise((r) => setTimeout(r, 200))
+    return
+  }
+
+  const raw = randomToken(32)
+  const hash = sha256(raw)
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+
+  await db.insert(passwordResets).values({ tokenHash: hash, userId: user.id, expiresAt })
+
+  // Fire-and-forget — a failed email doesn't surface to the caller
+  ;(async () => {
+    await sendPasswordResetEmail({ to: user.email, name: user.name, token: raw })
+  })().catch(() => {})
+}
+
+// ─── resetPassword ────────────────────────────────────────────────────────────
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  const tokenHash = sha256(token)
+
+  const reset = await db.query.passwordResets.findFirst({
+    where: and(eq(passwordResets.tokenHash, tokenHash), gt(passwordResets.expiresAt, new Date())),
+  })
+
+  if (!reset || reset.usedAt) throw new AppError('This reset link is invalid or has expired.', 400)
+
+  const passwordHash = await hashPassword(newPassword)
+
+  await db.transaction(async (tx) => {
+    await tx.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, reset.userId))
+    await tx.update(passwordResets).set({ usedAt: new Date() }).where(eq(passwordResets.tokenHash, tokenHash))
+  })
+}
+
 // ─── private helpers ─────────────────────────────────────────────────────────
 
 async function issueSession(
-  payload: AccessTokenPayload,
+  payload: { sub: string; orgId: string; role: string },
   user: { id: string; email: string; name: string },
 ): Promise<AuthResult> {
   const { raw, hash, expiresAt } = generateRefreshToken()
@@ -202,13 +277,13 @@ async function issueSession(
   await db.insert(sessions).values({
     userId: payload.sub,
     orgId: payload.orgId,
-    role: payload.role as 'owner' | 'admin' | 'member' | 'client',
+    role: payload.role as 'owner' | 'admin' | 'expert' | 'member' | 'client',
     tokenHash: hash,
     expiresAt,
   })
 
   return {
-    accessToken: signAccessToken(payload),
+    accessToken: signAccessToken({ ...payload, userId: payload.sub }),
     refreshToken: raw,
     user,
   }

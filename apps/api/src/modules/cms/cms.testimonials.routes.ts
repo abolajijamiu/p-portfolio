@@ -48,6 +48,7 @@ cmsTestimonialsRouter.post('/', ...guard, async (req, res, next) => {
         role: body.role ?? null,
         company: body.company ?? null,
         quote: body.quote.trim(),
+        rating: body.rating ?? null,
         workSlug: body.workSlug ?? null,
         featured: body.featured ?? false,
         status: 'draft',

@@ -2,6 +2,33 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { THEMES } from '@/lib/content/themes'
 import { ContactForm, type InquiryType } from '@/components/forms/ContactForm'
+import type { CmsTheme } from '@/types'
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+
+type ThemeContext = { slug: string; name: string; tagline?: string | null; priceCents?: number | null }
+
+async function findThemeBySlug(slug: string): Promise<ThemeContext | null> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/cms/themes/published`, { next: { revalidate: 3600 } })
+    if (res.ok) {
+      const items: CmsTheme[] = await res.json()
+      const found = items.find((t) => t.slug === slug)
+      if (found) return { slug: found.slug, name: found.name, tagline: found.tagline, priceCents: found.priceCents }
+    }
+  } catch {}
+  // Fall back to static content file
+  const staticTheme = THEMES.find((t) => t.slug === slug)
+  if (staticTheme) {
+    return {
+      slug: staticTheme.slug,
+      name: staticTheme.name,
+      tagline: staticTheme.tagline,
+      priceCents: typeof staticTheme.price === 'number' ? staticTheme.price * 100 : null,
+    }
+  }
+  return null
+}
 
 export const metadata: Metadata = {
   title: 'Contact',
@@ -26,7 +53,7 @@ type Props = {
 export default async function ContactPage({ searchParams }: Props) {
   const { theme: themeSlug, intent } = await searchParams
 
-  const theme = themeSlug ? THEMES.find((t) => t.slug === themeSlug) : undefined
+  const theme = themeSlug ? await findThemeBySlug(themeSlug) : null
 
   const inquiryType: InquiryType =
     theme && intent === 'purchase'
@@ -70,7 +97,7 @@ export default async function ContactPage({ searchParams }: Props) {
                 <p className="text-[11px] text-muted mt-0.5 leading-relaxed">{theme.tagline}</p>
                 {intent === 'purchase' && (
                   <p className="text-[11px] text-muted/60 mt-2">
-                    {theme.price === 'custom' ? 'Custom pricing' : `From $${theme.price}`}
+                    {theme.priceCents == null ? 'Custom pricing' : `From $${(theme.priceCents / 100).toFixed(0)}`}
                   </p>
                 )}
                 <Link

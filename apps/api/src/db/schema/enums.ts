@@ -3,6 +3,7 @@ import { pgEnum } from 'drizzle-orm/pg-core'
 export const memberRoleEnum = pgEnum('member_role', [
   'owner',
   'admin',
+  'expert',
   'member',
   'client',
 ])
@@ -22,6 +23,12 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'mention',
   'invite_accepted',
   'order_received',
+  'order_placed',
+  'order_delivered',
+  'order_completed',
+  'order_assigned',
+  'booking_confirmed',
+  'support_reply',
 ])
 
 export const contentStatusEnum = pgEnum('content_status', [
@@ -76,4 +83,93 @@ export const deliverableCategoryEnum = pgEnum('deliverable_category', [
   'custom_project',
   'license',
   'service',
+])
+
+export const serviceCategoryEnum = pgEnum('service_category', [
+  'development',
+  'marketing',
+  'branding',
+  'ai_analytics',
+  'ecommerce',
+  'consulting',
+  'publishing',
+  'technical',
+  'premium',
+])
+
+export const serviceOrderStatusEnum = pgEnum('service_order_status', [
+  'pending',
+  'payment_received',
+  'requirements_needed',
+  'requirements_submitted',
+  'assigned',
+  'in_progress',
+  'waiting_for_client',
+  'delivered',
+  'revision_requested',
+  'approved',
+  'completed',
+  'cancelled',
+])
+
+export const orderMessageTypeEnum = pgEnum('order_message_type', [
+  'message',
+  'system',
+  'delivery',
+  'revision_request',
+  'revision_delivery',
+])
+
+export const resourceCategoryEnum = pgEnum('resource_category', [
+  'template',
+  'plugin',
+  'guide',
+  'tool',
+  'starter_kit',
+  'design_asset',
+  'course',
+  'font',
+])
+
+export const resourcePurchaseStatusEnum = pgEnum('resource_purchase_status', [
+  'pending_payment',
+  'active',
+  'expired',
+  'refunded',
+])
+
+export const bookingStatusEnum = pgEnum('booking_status', [
+  'pending',
+  'confirmed',
+  'cancelled',
+  'completed',
+  'no_show',
+])
+
+export const bookingSlotStatusEnum = pgEnum('booking_slot_status', [
+  'available',
+  'booked',
+  'blocked',
+])
+
+export const bookingCategoryEnum = pgEnum('booking_category', [
+  'consultation',
+  'strategy',
+  'design_review',
+  'technical',
+  'onboarding',
+  'other',
+])
+
+export const supportTicketStatusEnum = pgEnum('support_ticket_status', [
+  'open',
+  'in_progress',
+  'closed',
+])
+
+export const supportTicketPriorityEnum = pgEnum('support_ticket_priority', [
+  'low',
+  'normal',
+  'high',
+  'urgent',
 ])
