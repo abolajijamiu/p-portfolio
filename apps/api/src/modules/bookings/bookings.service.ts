@@ -1,9 +1,9 @@
-import { and, asc, desc, eq, gte, lte, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, gte, lt, lte, sql } from 'drizzle-orm'
 import { db } from '../../db/client'
 import { bookingServices, bookingSlots, bookings, users } from '../../db/schema'
 import { AppError } from '../../lib/errors'
 import type { AccessTokenPayload } from '../../lib/tokens'
-import { emailBookingPlaced, emailBookingConfirmed } from '../../lib/email'
+import { emailBookingPlaced, emailBookingConfirmed, emailBookingRescheduled } from '../../lib/email'
 import { notify } from '../../lib/notify'
 
 // ─── Public: list active booking services ────────────────────────────────────
@@ -143,6 +143,7 @@ export async function getMyBookingById(auth: AccessTokenPayload, bookingId: stri
       booking: bookings,
       serviceTitle: bookingServices.title,
       serviceSlug: bookingServices.slug,
+      serviceId: bookingServices.id,
       serviceDuration: bookingServices.durationMinutes,
       serviceMeetingPlatform: bookingServices.meetingPlatform,
       serviceColor: bookingServices.color,
@@ -240,6 +241,29 @@ export async function adminBulkCreateSlots(
     endsAt: new Date(s.endsAt),
     status: 'available' as const,
   }))
+
+  // Reject if any incoming slot overlaps with an existing slot for the same service
+  for (const v of values) {
+    const [overlap] = await db
+      .select({ id: bookingSlots.id, startsAt: bookingSlots.startsAt })
+      .from(bookingSlots)
+      .where(
+        and(
+          eq(bookingSlots.bookingServiceId, serviceId),
+          lt(bookingSlots.startsAt, v.endsAt),
+          gt(bookingSlots.endsAt, v.startsAt),
+        ),
+      )
+      .limit(1)
+
+    if (overlap) {
+      throw new AppError(
+        `Slot starting ${v.startsAt.toISOString()} overlaps with an existing slot (${overlap.startsAt.toISOString()})`,
+        409,
+      )
+    }
+  }
+
   return db.insert(bookingSlots).values(values).returning()
 }
 
@@ -375,6 +399,90 @@ export async function adminUpdateBooking(id: string, fields: { meetingUrl?: stri
     .set({
       ...(fields.meetingUrl !== undefined && { meetingUrl: fields.meetingUrl || null }),
       ...(fields.adminNotes !== undefined && { adminNotes: fields.adminNotes || null }),
+      updatedAt: new Date(),
+    })
+    .where(eq(bookings.id, id))
+    .returning()
+  return updated
+}
+
+// ─── Client: reschedule booking ──────────────────────────────────────────────
+
+export async function rescheduleMyBooking(auth: AccessTokenPayload, bookingId: string, newSlotId: string) {
+  const [booking] = await db
+    .select()
+    .from(bookings)
+    .where(and(eq(bookings.id, bookingId), eq(bookings.clientId, auth.userId)))
+    .limit(1)
+
+  if (!booking) throw new AppError('Booking not found', 404)
+  if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+    throw new AppError('Booking cannot be rescheduled in its current status', 400)
+  }
+
+  const [newSlot] = await db
+    .select()
+    .from(bookingSlots)
+    .where(and(eq(bookingSlots.id, newSlotId), eq(bookingSlots.status, 'available')))
+    .limit(1)
+
+  if (!newSlot) throw new AppError('Slot not available', 400)
+
+  // Capture old slot start time before freeing it
+  const [oldSlot] = await db
+    .select({ startsAt: bookingSlots.startsAt })
+    .from(bookingSlots)
+    .where(eq(bookingSlots.id, booking.slotId))
+    .limit(1)
+
+  // Free the old slot
+  await db.update(bookingSlots).set({ status: 'available' }).where(eq(bookingSlots.id, booking.slotId))
+  // Book the new slot
+  await db.update(bookingSlots).set({ status: 'booked' }).where(eq(bookingSlots.id, newSlotId))
+
+  const [updated] = await db
+    .update(bookings)
+    .set({ slotId: newSlotId, rescheduledAt: new Date(), updatedAt: new Date() })
+    .where(eq(bookings.id, bookingId))
+    .returning()
+
+  // Email client — derive duration from slot times
+  if (oldSlot) {
+    const durationMinutes = Math.round((newSlot.endsAt.getTime() - newSlot.startsAt.getTime()) / 60_000)
+    Promise.all([
+      db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, auth.userId)).limit(1),
+      db.select({ title: bookingServices.title }).from(bookingServices).where(eq(bookingServices.id, booking.bookingServiceId)).limit(1),
+    ]).then(([clientRows, serviceRows]) => {
+      const client = clientRows[0]
+      if (client) {
+        emailBookingRescheduled({
+          clientEmail: client.email,
+          clientName: client.name,
+          serviceTitle: serviceRows[0]?.title ?? 'Your session',
+          oldStartsAt: oldSlot.startsAt,
+          newStartsAt: newSlot.startsAt,
+          durationMinutes,
+          meetingUrl: booking.meetingUrl ?? null,
+          bookingId,
+        }).catch(() => {})
+      }
+    }).catch(() => {})
+  }
+
+  return updated
+}
+
+// ─── Admin: add session notes ─────────────────────────────────────────────────
+
+export async function adminAddSessionNotes(
+  id: string,
+  fields: { sessionNotes?: string; recordingUrl?: string },
+) {
+  const [updated] = await db
+    .update(bookings)
+    .set({
+      ...(fields.sessionNotes !== undefined && { sessionNotes: fields.sessionNotes }),
+      ...(fields.recordingUrl !== undefined && { recordingUrl: fields.recordingUrl }),
       updatedAt: new Date(),
     })
     .where(eq(bookings.id, id))

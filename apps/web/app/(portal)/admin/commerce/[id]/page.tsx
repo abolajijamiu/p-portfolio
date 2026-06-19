@@ -6,7 +6,7 @@ import Link from 'next/link'
 import useSWR from 'swr'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { http } from '@/lib/http'
-import type { CommerceOrder, DeliverableStatus } from '@/types'
+import type { CommerceEvent, CommerceOrder, DeliverableStatus } from '@/types'
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -24,6 +24,18 @@ const DELIVERABLE_STYLE: Record<string, string> = {
   cancelled: 'bg-surface text-muted',
 }
 
+const EVENT_DOT: Record<string, string> = {
+  ok: 'bg-emerald-500',
+  error: 'bg-rose-500',
+  skipped: 'bg-amber-400',
+}
+
+const EVENT_STATUS_LABEL: Record<string, string> = {
+  ok: 'OK',
+  error: 'Error',
+  skipped: 'Skipped',
+}
+
 function formatMoney(cents: number, currency: string) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(cents / 100)
 }
@@ -33,6 +45,76 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <dt className="text-[11px] text-muted uppercase tracking-wide">{label}</dt>
       <dd className="mt-0.5 text-sm text-ink">{value}</dd>
+    </div>
+  )
+}
+
+function EventTimeline({ orderId }: { orderId: string }) {
+  const { data: events, isLoading } = useSWR<CommerceEvent[]>(`/cms/commerce/orders/${orderId}/events`)
+
+  if (isLoading) {
+    return (
+      <div className="border border-border rounded-xl overflow-hidden bg-white">
+        <div className="px-5 py-3.5 border-b border-border">
+          <h2 className="text-xs font-medium text-muted uppercase tracking-wide">Automation Timeline</h2>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (!events?.length) {
+    return (
+      <div className="border border-border rounded-xl overflow-hidden bg-white">
+        <div className="px-5 py-3.5 border-b border-border">
+          <h2 className="text-xs font-medium text-muted uppercase tracking-wide">Automation Timeline</h2>
+        </div>
+        <p className="px-5 py-4 text-sm text-muted">No automation events recorded for this order.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden bg-white">
+      <div className="px-5 py-3.5 border-b border-border flex items-center justify-between">
+        <h2 className="text-xs font-medium text-muted uppercase tracking-wide">Automation Timeline</h2>
+        <span className="text-[11px] text-muted">{events.length} events</span>
+      </div>
+      <div className="px-5 py-4">
+        <ol className="relative border-l border-border/60 space-y-5 ml-2">
+          {events.map((ev) => (
+            <li key={ev.id} className="ml-5">
+              <span className={`absolute -left-[5px] mt-1 h-2.5 w-2.5 rounded-full border-2 border-white ${EVENT_DOT[ev.status] ?? 'bg-muted'}`} />
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-sm font-medium text-ink">{ev.event}</p>
+                  {ev.detail && Object.keys(ev.detail).length > 0 && (
+                    <p className="text-[11px] text-muted mt-0.5 font-mono">
+                      {Object.entries(ev.detail)
+                        .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`)
+                        .join(' · ')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                    ev.status === 'ok' ? 'bg-emerald-50 text-emerald-700' :
+                    ev.status === 'error' ? 'bg-rose-50 text-rose-700' :
+                    'bg-amber-50 text-amber-700'
+                  }`}>
+                    {EVENT_STATUS_LABEL[ev.status] ?? ev.status}
+                  </span>
+                  <span className="text-[11px] text-muted">
+                    {new Date(ev.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   )
 }
@@ -181,6 +263,9 @@ export default function AdminOrderDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Automation timeline */}
+            <EventTimeline orderId={order.id} />
           </div>
         )}
       </div>

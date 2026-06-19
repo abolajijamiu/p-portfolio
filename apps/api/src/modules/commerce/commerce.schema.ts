@@ -8,7 +8,7 @@ export const createDeliverableTypeSchema = z.object({
     .max(100)
     .regex(/^[a-z0-9-]+$/, 'slug must be lowercase alphanumeric with hyphens'),
   description: z.string().max(500).optional(),
-  category: z.enum(['theme', 'support', 'custom_project', 'license', 'service']),
+  category: z.enum(['theme', 'support', 'custom_project', 'license', 'service', 'consultation', 'analytics']),
   autoTrigger: z.boolean().default(true),
 })
 
@@ -17,6 +17,7 @@ export type CreateDeliverableTypeInput = z.infer<typeof createDeliverableTypeSch
 export const upsertMappingSchema = z.object({
   provider: z.string().min(1),
   externalProductId: z.string().min(1),
+  productName: z.string().optional(),
   deliverableTypeId: z.string().uuid(),
   config: z.record(z.unknown()).default({}),
   active: z.boolean().default(true),

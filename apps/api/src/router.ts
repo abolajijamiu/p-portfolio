@@ -34,6 +34,7 @@ import { expertRouter, cmsPayoutsRouter } from './modules/expert/expert.routes'
 import { cmsDashboardRouter } from './modules/cms-dashboard/cms-dashboard.routes'
 import { cmsAuditRouter } from './modules/audit/audit.routes'
 import { supportRouter, cmsSupportRouter } from './modules/support/support.routes'
+import { deliverablesRouter, expertDeliverablesRouter, cmsDeliverablesRouter } from './modules/deliverables/deliverables.routes'
 import { testimonialPublicRouter } from './modules/testimonials/testimonials.routes'
 
 export const router = Router()
@@ -102,6 +103,11 @@ router.use('/cms/audit-logs', cmsAuditRouter)
 // Support tickets
 router.use('/support', supportRouter)
 router.use('/cms/support', cmsSupportRouter)
+
+// Deliverables
+router.use('/deliverables', deliverablesRouter)
+router.use('/expert/deliverables', expertDeliverablesRouter)
+router.use('/cms/deliverables', cmsDeliverablesRouter)
 
 // Testimonial requests (public — no auth)
 router.use('/testimonials', testimonialPublicRouter)

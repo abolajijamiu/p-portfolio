@@ -99,6 +99,15 @@ bookingsRouter.post('/:id/cancel', validate(cancelBookingSchema), async (req, re
   }
 })
 
+// POST /bookings/:id/reschedule
+bookingsRouter.post('/:id/reschedule', async (req, res, next) => {
+  try {
+    res.json(await svc.rescheduleMyBooking(req.auth, req.params.id as string, req.body.slotId))
+  } catch (err) {
+    next(err)
+  }
+})
+
 // ─── Admin routes — /cms/bookings ─────────────────────────────────────────────
 
 export const cmsBookingsRouter = Router()
@@ -134,6 +143,16 @@ cmsBookingsRouter.patch('/:id', ...guard, validate(updateBookingSchema), async (
   try {
     const { meetingUrl, adminNotes } = req.body
     res.json(await svc.adminUpdateBooking(req.params.id as string, { meetingUrl, adminNotes }))
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /cms/bookings/:id/session-notes
+cmsBookingsRouter.post('/:id/session-notes', ...guard, async (req, res, next) => {
+  try {
+    const { sessionNotes, recordingUrl } = req.body as { sessionNotes?: string; recordingUrl?: string }
+    res.json(await svc.adminAddSessionNotes(req.params.id as string, { sessionNotes, recordingUrl }))
   } catch (err) {
     next(err)
   }

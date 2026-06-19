@@ -111,16 +111,26 @@ export async function verifyTotpLogin(
 
 // ─── refresh ─────────────────────────────────────────────────────────────────
 
-export async function refresh(rawToken: string): Promise<{ accessToken: string }> {
+export async function refresh(rawToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  const oldHash = sha256(rawToken)
+
   const session = await db.query.sessions.findFirst({
     where: and(
-      eq(sessions.tokenHash, sha256(rawToken)),
+      eq(sessions.tokenHash, oldHash),
       gt(sessions.expiresAt, new Date()),
     ),
     columns: { userId: true, orgId: true, role: true },
   })
 
   if (!session) throw new AppError('Invalid or expired session', 401)
+
+  const { raw, hash, expiresAt } = generateRefreshToken()
+
+  // Rotate: replace old token hash with new one atomically
+  await db
+    .update(sessions)
+    .set({ tokenHash: hash, expiresAt })
+    .where(eq(sessions.tokenHash, oldHash))
 
   const accessToken = signAccessToken({
     sub: session.userId,
@@ -129,7 +139,7 @@ export async function refresh(rawToken: string): Promise<{ accessToken: string }
     role: session.role,
   })
 
-  return { accessToken }
+  return { accessToken, refreshToken: raw }
 }
 
 // ─── logout ──────────────────────────────────────────────────────────────────

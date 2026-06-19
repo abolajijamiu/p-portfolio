@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, sql } from 'drizzle-orm'
 import { db } from '../../db/client'
 import { supportTickets, supportTicketMessages } from '../../db/schema/support'
 import { users } from '../../db/schema/users'
@@ -7,16 +7,27 @@ import { log } from '../audit/audit.service'
 import { emailSupportTicketNew, emailSupportTicketReply } from '../../lib/email'
 import { notify } from '../../lib/notify'
 
+type SupportCategory = 'general' | 'billing' | 'technical' | 'orders' | 'resources' | 'analytics' | 'consultations'
+
+async function generateTicketNumber(): Promise<string> {
+  const year = new Date().getFullYear()
+  const [row] = await db.select({ count: sql<number>`cast(count(*) as int)` }).from(supportTickets)
+  const seq = String((row?.count ?? 0) + 1).padStart(4, '0')
+  return `SUP-${year}-${seq}`
+}
+
 // ─── Client ───────────────────────────────────────────────────────────────────
 
 export async function createTicket(
   auth: AccessTokenPayload,
-  body: { subject: string; message: string },
+  body: { subject: string; message: string; category?: SupportCategory },
   ipAddress?: string,
 ) {
+  const ticketNumber = await generateTicketNumber()
+
   const [ticket] = await db
     .insert(supportTickets)
-    .values({ userId: auth.userId, subject: body.subject })
+    .values({ ticketNumber, userId: auth.userId, subject: body.subject, category: body.category ?? 'general' })
     .returning()
 
   await db.insert(supportTicketMessages).values({

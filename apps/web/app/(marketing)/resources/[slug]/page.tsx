@@ -284,6 +284,70 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
           </div>
         </div>
       </section>
+
+      {/* After purchase */}
+      <section className="bg-surface border-b border-border">
+        <div className="px-5 md:px-10 lg:px-16 py-14 max-w-7xl mx-auto">
+          <h2 className="font-display text-xl font-bold text-ink mb-8">After purchase</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { title: 'Permanent access', body: 'Files stay in your portal indefinitely. Redownload any time — no expiry, no renewal fees.' },
+              { title: 'Free updates', body: 'Minor updates and bug fixes are pushed automatically. You\'ll see the new version in your portal.' },
+              { title: 'Licence key', body: 'Your unique licence key is generated on activation. Keep it — it proves ownership for future updates.' },
+              { title: 'Support', body: 'Installation questions? Message us in the portal within 30 days of purchase and we\'ll help.' },
+            ].map(({ title, body }) => (
+              <div key={title} className="bg-white border border-border rounded-xl p-5">
+                <p className="text-sm font-semibold text-ink mb-2">{title}</p>
+                <p className="text-xs text-muted leading-relaxed">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Version history */}
+      <section className="bg-white">
+        <div className="px-5 md:px-10 lg:px-16 py-14 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-10 lg:gap-20">
+            <div>
+              <h2 className="font-display text-xl font-bold text-ink mb-3">Version history</h2>
+              <p className="text-sm text-muted leading-relaxed">
+                All purchasers receive updates automatically. Major version changes are announced via email.
+              </p>
+            </div>
+            <div className="border border-border rounded-xl overflow-hidden">
+              {[
+                { version: 'v1.3.0', date: 'May 2025', label: 'Latest', changes: ['Performance improvements — 15% faster page load on mobile', 'Fixed cart drawer z-index conflict on mobile Safari', 'New: announcement bar with countdown timer component'] },
+                { version: 'v1.2.1', date: 'March 2025', label: 'Patch', changes: ['Fixed: meta fields not saving on collection pages', 'Updated Shopify OS 2.0 section schema compatibility'] },
+                { version: 'v1.2.0', date: 'January 2025', label: 'Minor', changes: ['New: product comparison table section', 'New: Instagram feed integration block', 'Improved: typography scale and spacing system'] },
+                { version: 'v1.0.0', date: 'November 2024', label: 'Initial', changes: ['Initial release'] },
+              ].map(({ version, date, label, changes }, i) => (
+                <div key={version} className={`px-5 py-5 ${i < 3 ? 'border-b border-border' : ''}`}>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="text-sm font-bold text-ink font-mono">{version}</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      label === 'Latest' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' :
+                      label === 'Patch' ? 'text-amber-700 bg-amber-50 border-amber-200' :
+                      'text-muted bg-surface border-border'
+                    }`}>
+                      {label}
+                    </span>
+                    <span className="text-xs text-muted ml-auto">{date}</span>
+                  </div>
+                  <ul className="space-y-1">
+                    {changes.map((c) => (
+                      <li key={c} className="flex items-start gap-2 text-xs text-muted">
+                        <span className="text-muted/50 mt-0.5">—</span>
+                        {c}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   )
 }

@@ -123,9 +123,12 @@ export function Footer() {
           <p className="text-white/25 text-xs">
             © {new Date().getFullYear()} E-Tech. All rights reserved.
           </p>
-          <div className="flex items-center gap-5 text-xs text-white/25">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/25">
+            <Link href="/legal" className="hover:text-white/60 transition-colors duration-150">Legal</Link>
             <Link href="/privacy" className="hover:text-white/60 transition-colors duration-150">Privacy</Link>
             <Link href="/terms" className="hover:text-white/60 transition-colors duration-150">Terms</Link>
+            <Link href="/refund" className="hover:text-white/60 transition-colors duration-150">Refunds</Link>
+            <Link href="/cookies" className="hover:text-white/60 transition-colors duration-150">Cookies</Link>
             <Link href="/licenses" className="hover:text-white/60 transition-colors duration-150">Licenses</Link>
           </div>
         </div>

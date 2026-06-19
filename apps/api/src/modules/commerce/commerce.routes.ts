@@ -95,8 +95,7 @@ cmsCommerceRouter.patch('/deliverables/:id/status', ...guard, async (req, res, n
   }
 })
 
-// WooCommerce product list — proxied from WC REST API so the admin UI can
-// build mappings without needing direct WC credentials on the frontend.
+// WooCommerce product list — proxied from WC REST API
 cmsCommerceRouter.get('/wc-products', ...guard, async (_req, res, next) => {
   try {
     const products = await fetchProducts()
@@ -104,6 +103,28 @@ cmsCommerceRouter.get('/wc-products', ...guard, async (_req, res, next) => {
   } catch (err) {
     next(err)
   }
+})
+
+// Resource + service pickers for mapping config
+cmsCommerceRouter.get('/resources-lite', ...guard, async (req, res, next) => {
+  try { res.json(await commerceService.listResourcesLite(req.auth)) } catch (err) { next(err) }
+})
+
+cmsCommerceRouter.get('/services-lite', ...guard, async (req, res, next) => {
+  try { res.json(await commerceService.listServicesLite(req.auth)) } catch (err) { next(err) }
+})
+
+// Per-order automation timeline
+cmsCommerceRouter.get('/orders/:id/events', ...guard, async (req, res, next) => {
+  try {
+    const { id } = req.params as { id: string }
+    res.json(await commerceService.getOrderEvents(req.auth, id))
+  } catch (err) { next(err) }
+})
+
+// Failed webhook deliveries
+cmsCommerceRouter.get('/webhook-failures', ...guard, async (req, res, next) => {
+  try { res.json(await commerceService.listWebhookFailures(req.auth)) } catch (err) { next(err) }
 })
 
 // ─── Portal routes — /orders ──────────────────────────────────────────────────

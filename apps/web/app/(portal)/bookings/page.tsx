@@ -41,15 +41,22 @@ const STATUS_LABEL: Record<string, string> = {
   no_show: 'No-show',
 }
 
+const TZ = typeof window !== 'undefined'
+  ? Intl.DateTimeFormat().resolvedOptions().timeZone
+  : 'UTC'
+
 function fmtSlot(startsAt: string, endsAt: string) {
   const start = new Date(startsAt)
   const end = new Date(endsAt)
+  const opts = { timeZone: TZ } as const
+  const tzLabel = start.toLocaleTimeString('en-GB', { ...opts, timeZoneName: 'short' }).split(' ').pop() ?? ''
   return (
-    start.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+    start.toLocaleDateString('en-GB', { ...opts, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
     ' · ' +
-    start.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) +
+    start.toLocaleTimeString('en-GB', { ...opts, hour: '2-digit', minute: '2-digit', hour12: false }) +
     '–' +
-    end.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+    end.toLocaleTimeString('en-GB', { ...opts, hour: '2-digit', minute: '2-digit', hour12: false }) +
+    ' ' + tzLabel
   )
 }
 

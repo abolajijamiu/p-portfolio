@@ -7,6 +7,12 @@ import { api } from '@/lib/api'
 
 type BookingStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
 
+type Slot = {
+  id: string
+  startsAt: string
+  endsAt: string
+}
+
 type BookingDetail = {
   booking: {
     id: string
@@ -17,6 +23,9 @@ type BookingDetail = {
     adminNotes?: string | null
     meetingUrl?: string | null
     cancelReason?: string | null
+    sessionNotes?: string | null
+    recordingUrl?: string | null
+    rescheduledAt?: string | null
     confirmedAt?: string | null
     completedAt?: string | null
     cancelledAt?: string | null
@@ -24,6 +33,7 @@ type BookingDetail = {
   }
   serviceTitle: string
   serviceSlug: string
+  serviceId: string
   serviceDuration: number
   serviceMeetingPlatform: string
   serviceColor: string
@@ -47,19 +57,34 @@ const STATUS_COLOR: Record<BookingStatus, string> = {
   no_show: 'bg-slate-100 text-slate-600',
 }
 
+const TZ = typeof window !== 'undefined'
+  ? Intl.DateTimeFormat().resolvedOptions().timeZone
+  : 'UTC'
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 }
 
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return new Date(iso).toLocaleTimeString('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false })
 }
+
 
 function fmtPrice(cents: number, currency: string) {
   if (cents === 0) return 'Free'
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(cents / 100)
+}
+
+function groupSlotsByDate(slots: Slot[]): Record<string, Slot[]> {
+  const groups: Record<string, Slot[]> = {}
+  for (const s of slots) {
+    const k = s.startsAt.slice(0, 10)
+    if (!groups[k]) groups[k] = []
+    groups[k].push(s)
+  }
+  return groups
 }
 
 export default function BookingDetailPage() {
@@ -71,6 +96,14 @@ export default function BookingDetailPage() {
   const [cancelling, setCancelling] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [showCancel, setShowCancel] = useState(false)
+
+  const [showReschedule, setShowReschedule] = useState(false)
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedSlotId, setSelectedSlotId] = useState('')
+  const [rescheduling, setRescheduling] = useState(false)
+  const [rescheduleError, setRescheduleError] = useState('')
 
   const paymentResult =
     typeof window !== 'undefined'
@@ -106,6 +139,40 @@ export default function BookingDetailPage() {
     }
   }
 
+  async function openReschedule() {
+    if (!data) return
+    setShowReschedule(true)
+    setSlotsLoading(true)
+    setSelectedDate('')
+    setSelectedSlotId('')
+    setRescheduleError('')
+    try {
+      const from = new Date().toISOString()
+      const to = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+      const slots = await api.get<Slot[]>(`/booking-services/${data.serviceId}/slots?from=${from}&to=${to}`)
+      setAvailableSlots(slots)
+    } catch {
+      setRescheduleError('Failed to load available slots.')
+    } finally {
+      setSlotsLoading(false)
+    }
+  }
+
+  async function handleReschedule() {
+    if (!selectedSlotId) return
+    setRescheduling(true)
+    setRescheduleError('')
+    try {
+      await api.post(`/bookings/${id}/reschedule`, { slotId: selectedSlotId })
+      setShowReschedule(false)
+      load()
+    } catch (err: unknown) {
+      setRescheduleError((err as Error).message ?? 'Failed to reschedule booking.')
+    } finally {
+      setRescheduling(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
@@ -130,9 +197,14 @@ export default function BookingDetailPage() {
 
   const { booking } = data
   const canCancel = booking.status === 'pending' || booking.status === 'confirmed'
+  const canReschedule = booking.status === 'confirmed'
   const isCancelled = booking.status === 'cancelled'
   const isCompleted = booking.status === 'completed'
   const isConfirmed = booking.status === 'confirmed'
+
+  const slotGroups = groupSlotsByDate(availableSlots)
+  const datesAvailable = Object.keys(slotGroups).sort()
+  const slotsForDate = selectedDate ? (slotGroups[selectedDate] ?? []) : []
 
   return (
     <div className="min-h-screen bg-surface">
@@ -184,7 +256,15 @@ export default function BookingDetailPage() {
 
           <div className="bg-surface rounded-xl p-4 mb-5 space-y-1">
             <p className="text-sm font-semibold text-ink">{fmtDate(data.slotStartsAt)}</p>
-            <p className="text-sm text-muted">{fmtTime(data.slotStartsAt)} – {fmtTime(data.slotEndsAt)}</p>
+            <p className="text-sm text-muted">
+              {fmtTime(data.slotStartsAt)} – {fmtTime(data.slotEndsAt)}
+              {' '}<span className="text-[11px]">{new Date().toLocaleTimeString('en-GB', { timeZone: TZ, timeZoneName: 'short' }).split(' ').pop()}</span>
+            </p>
+            {booking.rescheduledAt && (
+              <p className="text-[11px] text-amber-600 mt-1">
+                Rescheduled on {new Date(booking.rescheduledAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-xs">
@@ -205,7 +285,7 @@ export default function BookingDetailPage() {
           </div>
         </div>
 
-        {/* Meeting link (shown once confirmed) */}
+        {/* Meeting link */}
         {isConfirmed && booking.meetingUrl && (
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
             <p className="text-sm font-semibold text-emerald-800 mb-2">Your meeting link is ready</p>
@@ -220,13 +300,41 @@ export default function BookingDetailPage() {
           </div>
         )}
 
-        {/* Confirmed but no meeting URL yet */}
         {isConfirmed && !booking.meetingUrl && (
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
             <p className="text-sm font-semibold text-blue-800 mb-1">Session confirmed</p>
             <p className="text-sm text-blue-700">
               Your meeting link will be sent to your email before the session.
             </p>
+          </div>
+        )}
+
+        {/* Session summary (completed) */}
+        {isCompleted && (booking.sessionNotes || booking.recordingUrl) && (
+          <div className="bg-white rounded-xl border border-border p-5 space-y-4">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wider">Session summary</p>
+            {booking.sessionNotes && (
+              <div>
+                <p className="text-xs font-medium text-muted mb-1.5">Notes from your session</p>
+                <p className="text-sm text-ink leading-relaxed whitespace-pre-wrap">{booking.sessionNotes}</p>
+              </div>
+            )}
+            {booking.recordingUrl && (
+              <div>
+                <p className="text-xs font-medium text-muted mb-1.5">Session recording</p>
+                <a
+                  href={booking.recordingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand-deep underline underline-offset-2"
+                >
+                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  Watch recording
+                </a>
+              </div>
+            )}
           </div>
         )}
 
@@ -246,7 +354,7 @@ export default function BookingDetailPage() {
           </div>
         )}
 
-        {/* Completed */}
+        {/* Completed badge */}
         {isCompleted && (
           <div className="bg-green-50 border border-green-200 rounded-xl p-5 text-center">
             <svg className="h-8 w-8 text-green-600 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -267,6 +375,87 @@ export default function BookingDetailPage() {
             <p className="text-sm font-semibold text-red-800 mb-1">Booking cancelled</p>
             {booking.cancelReason && (
               <p className="text-sm text-red-700">{booking.cancelReason}</p>
+            )}
+          </div>
+        )}
+
+        {/* Reschedule */}
+        {canReschedule && (
+          <div className="bg-white rounded-xl border border-border p-5">
+            {showReschedule ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-ink">Reschedule session</p>
+                  <button onClick={() => setShowReschedule(false)} className="text-xs text-muted hover:text-ink transition-colors">
+                    Cancel
+                  </button>
+                </div>
+
+                {slotsLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted py-4">
+                    <div className="h-4 w-4 border-2 border-brand/30 border-t-brand rounded-full animate-spin" />
+                    Loading available slots…
+                  </div>
+                ) : rescheduleError ? (
+                  <p className="text-sm text-rose-600 py-2">{rescheduleError}</p>
+                ) : availableSlots.length === 0 ? (
+                  <p className="text-sm text-muted py-2">No available slots in the next 60 days.</p>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1.5">Select a date</label>
+                      <select
+                        value={selectedDate}
+                        onChange={(e) => { setSelectedDate(e.target.value); setSelectedSlotId('') }}
+                        className="w-full text-sm border border-border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/30 focus:border-brand/40 bg-white"
+                      >
+                        <option value="">Choose a date…</option>
+                        {datesAvailable.map((d) => (
+                          <option key={d} value={d}>
+                            {new Date(d + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' })}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {selectedDate && (
+                      <div>
+                        <label className="block text-xs font-medium text-muted mb-1.5">Select a time</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {slotsForDate.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => setSelectedSlotId(s.id)}
+                              className={`py-2 px-3 text-sm font-medium rounded-lg border transition-colors ${
+                                selectedSlotId === s.id
+                                  ? 'bg-brand text-white border-brand'
+                                  : 'border-border text-ink hover:border-brand/40 hover:bg-brand/5'
+                              }`}
+                            >
+                              {fmtTime(s.startsAt)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleReschedule}
+                      disabled={rescheduling || !selectedSlotId}
+                      className="w-full bg-brand text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-brand-deep transition-colors disabled:opacity-50"
+                    >
+                      {rescheduling ? 'Rescheduling…' : 'Confirm new time'}
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={openReschedule}
+                className="text-sm text-brand hover:text-brand-deep font-medium transition-colors"
+              >
+                Reschedule this booking
+              </button>
             )}
           </div>
         )}

@@ -328,7 +328,7 @@ export type CommerceOrderStatus =
 
 export type DeliverableStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled'
 
-export type DeliverableCategory = 'theme' | 'support' | 'custom_project' | 'license' | 'service'
+export type DeliverableCategory = 'theme' | 'support' | 'custom_project' | 'license' | 'service' | 'consultation' | 'analytics'
 
 export type CommerceOrderItem = {
   id: string
@@ -382,8 +382,10 @@ export type ProductMapping = {
   id: string
   provider: string
   externalProductId: string
+  productName?: string | null
   deliverableTypeId: string
   deliverableType: DeliverableType
+  config: Record<string, string>
   active: boolean
   createdAt: string
   updatedAt: string
@@ -397,4 +399,23 @@ export type WcProduct = {
   price: string
   regular_price: string
   categories: Array<{ id: number; name: string; slug: string }>
+}
+
+export type CommerceEvent = {
+  id: string
+  orderId: string
+  event: string
+  status: 'ok' | 'error' | 'skipped'
+  detail?: Record<string, unknown> | null
+  createdAt: string
+}
+
+export type WcWebhookEvent = {
+  id: string
+  topic: string
+  externalId?: string | null
+  status: 'pending' | 'processed' | 'failed'
+  payload?: Record<string, unknown> | null
+  error?: string | null
+  createdAt: string
 }

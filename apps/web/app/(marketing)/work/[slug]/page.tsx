@@ -151,16 +151,45 @@ export default async function WorkDetailPage({ params }: Props) {
         )}
       </div>
 
-      {/* Visual hero */}
+      {/* Project summary card */}
       <div className="py-10 md:py-12">
         <div
-          className="w-full aspect-[16/7] rounded-xl relative overflow-hidden"
+          className="w-full rounded-xl relative overflow-hidden p-8 md:p-12"
           style={{ backgroundColor: item.accentColor ?? '#f0f0ef' }}
         >
-          <div className="absolute inset-0 flex items-center justify-center">
-            <p className="text-[13px] font-medium text-ink/30 tracking-wide">
-              {item.client} — visual walkthrough available on request
-            </p>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8 items-end">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-ink/40 mb-3">
+                {CATEGORY_LABEL[item.category] ?? item.category}
+                {item.industry ? ` · ${item.industry}` : ''}
+              </p>
+              <p className="font-display text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-ink leading-[1.1] tracking-tight mb-5 max-w-xl">
+                {item.headline}
+              </p>
+              {item.scope.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {item.scope.map((s) => (
+                    <span
+                      key={s}
+                      className="text-[11px] font-medium text-ink/60 bg-black/[0.06] px-2.5 py-1 rounded"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            {item.proof.length > 0 && (
+              <div className="flex flex-col gap-4">
+                {item.proof.slice(0, 2).map((p) => (
+                  <div key={p.label} className="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-4 text-right">
+                    <p className="text-2xl font-bold text-ink tracking-tight">{p.metric}</p>
+                    <p className="text-xs text-ink/60 mt-0.5">{p.label}</p>
+                    {p.period && <p className="text-[10px] text-ink/40 mt-0.5">{p.period}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

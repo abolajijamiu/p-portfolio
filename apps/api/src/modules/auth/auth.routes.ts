@@ -104,7 +104,8 @@ authRouter.post('/refresh', async (req, res, next) => {
   try {
     const token = req.cookies[COOKIE_NAME]
     if (!token) return res.status(401).json({ error: 'Unauthorized' })
-    const { accessToken } = await authService.refresh(token)
+    const { accessToken, refreshToken } = await authService.refresh(token)
+    setRefreshCookie(res, refreshToken)
     res.json({ accessToken })
   } catch (err) {
     next(err)

@@ -20,6 +20,7 @@ export * from './bookings'
 export * from './payouts'
 export * from './audit'
 export * from './support'
+export * from './deliverables'
 export * from './password-resets'
 
 import { users } from './users'
@@ -145,6 +146,7 @@ import {
   commerceCustomers,
   commerceOrderItems,
   commerceOrders,
+  commerceEvents,
   deliverableTypes,
   deliverables,
   productMappings,
@@ -162,6 +164,12 @@ export const commerceOrdersRelations = relations(commerceOrders, ({ one, many })
   customer: one(commerceCustomers, { fields: [commerceOrders.customerId], references: [commerceCustomers.id] }),
   items: many(commerceOrderItems),
   deliverables: many(deliverables),
+  events: many(commerceEvents),
+}))
+
+export const commerceEventsRelations = relations(commerceEvents, ({ one }) => ({
+  organization: one(organizations, { fields: [commerceEvents.orgId], references: [organizations.id] }),
+  order: one(commerceOrders, { fields: [commerceEvents.orderId], references: [commerceOrders.id] }),
 }))
 
 export const commerceOrderItemsRelations = relations(commerceOrderItems, ({ one }) => ({
@@ -327,4 +335,19 @@ export const supportTicketsRelations = relations(supportTickets, ({ one, many })
 export const supportTicketMessagesRelations = relations(supportTicketMessages, ({ one }) => ({
   ticket: one(supportTickets, { fields: [supportTicketMessages.ticketId], references: [supportTickets.id] }),
   sender: one(users, { fields: [supportTicketMessages.senderId], references: [users.id] }),
+}))
+
+// ─── Service deliverables relations ──────────────────────────────────────────
+
+import { serviceDeliverables, serviceDeliverableRevisions } from './deliverables'
+
+export const serviceDeliverablesRelations = relations(serviceDeliverables, ({ one, many }) => ({
+  order: one(serviceOrders, { fields: [serviceDeliverables.orderId], references: [serviceOrders.id] }),
+  expert: one(users, { fields: [serviceDeliverables.assignedExpertId], references: [users.id] }),
+  revisions: many(serviceDeliverableRevisions),
+}))
+
+export const serviceDeliverableRevisionsRelations = relations(serviceDeliverableRevisions, ({ one }) => ({
+  deliverable: one(serviceDeliverables, { fields: [serviceDeliverableRevisions.deliverableId], references: [serviceDeliverables.id] }),
+  submittedBy: one(users, { fields: [serviceDeliverableRevisions.submittedBy], references: [users.id] }),
 }))

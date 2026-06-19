@@ -390,6 +390,260 @@ export function payoutRecordedExpert(params: {
   return { subject, html }
 }
 
+// ─── Commerce order confirmed ─────────────────────────────────────────────────
+
+export function commerceOrderConfirmed(params: {
+  name: string
+  orderId: string
+  invoiceNumber?: string
+  totalCents: number
+  currency: string
+  deliverableCount: number
+  items: { name: string; priceCents: number }[]
+}): { subject: string; html: string } {
+  const subject = params.invoiceNumber
+    ? `Order confirmed — ${params.invoiceNumber}`
+    : 'Your order has been confirmed'
+  const html = baseTemplate(`
+    ${h1('Order confirmed')}
+    ${p(`Hi ${strong(params.name)}, thank you for your order. We've received your payment and your delivery is being prepared.`)}
+    ${infoTable([
+      ...(params.invoiceNumber ? [['Invoice', params.invoiceNumber] as [string, string]] : []),
+      ['Total', fmtMoney(params.totalCents, params.currency)],
+    ])}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;">
+      ${params.items.map((item) => `
+        <tr>
+          <td style="padding:6px 0;font-size:13px;color:${INK};">${esc(item.name)}</td>
+          <td style="padding:6px 0;font-size:13px;color:${INK};text-align:right;">${fmtMoney(item.priceCents, params.currency)}</td>
+        </tr>
+      `).join('')}
+    </table>
+    ${callout(`Your ${params.deliverableCount === 1 ? 'deliverable is' : `${params.deliverableCount} deliverables are`} being prepared. You'll receive a notification when ${params.deliverableCount === 1 ? 'it\'s' : 'they\'re'} ready.`)}
+    ${ctaButton('View in portal', `${WEB_URL}/orders`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Invoice generated ────────────────────────────────────────────────────────
+
+export function invoiceGenerated(params: {
+  name: string
+  invoiceNumber: string
+  orderId: string
+  totalCents: number
+  currency: string
+  items: { name: string; priceCents: number }[]
+}): { subject: string; html: string } {
+  const subject = `Invoice ${params.invoiceNumber}`
+  const html = baseTemplate(`
+    ${h1(`Invoice ${esc(params.invoiceNumber)}`)}
+    ${p(`Hi ${strong(params.name)}, please find your invoice below.`)}
+    ${infoTable([
+      ['Invoice number', params.invoiceNumber],
+      ['Date', fmtDate(new Date())],
+      ['Status', 'Paid'],
+    ])}
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0;border-top:1px solid ${BORDER};">
+      ${params.items.map((item) => `
+        <tr>
+          <td style="padding:8px 0;font-size:13px;color:${INK};border-bottom:1px solid ${BORDER};">${esc(item.name)}</td>
+          <td style="padding:8px 0;font-size:13px;color:${INK};text-align:right;border-bottom:1px solid ${BORDER};">${fmtMoney(item.priceCents, params.currency)}</td>
+        </tr>
+      `).join('')}
+      <tr>
+        <td style="padding:10px 0;font-size:14px;font-weight:700;color:${INK};">Total</td>
+        <td style="padding:10px 0;font-size:14px;font-weight:700;color:${INK};text-align:right;">${fmtMoney(params.totalCents, params.currency)}</td>
+      </tr>
+    </table>
+    ${p('Keep this email for your records. If you need a formal invoice with additional details, please open a support ticket.')}
+    ${ctaButton('View in portal', `${WEB_URL}/orders`)}
+  `)
+  return { subject, html }
+}
+
+// ─── License issued ───────────────────────────────────────────────────────────
+
+export function licenseIssued(params: {
+  name: string
+  resourceTitle: string
+  licenseName: string
+  licenseKey: string
+  purchaseId: string
+}): { subject: string; html: string } {
+  const subject = `Your license is ready — ${params.resourceTitle}`
+  const html = baseTemplate(`
+    ${h1('Your license is ready')}
+    ${p(`Hi ${strong(params.name)}, your purchase of ${strong(params.resourceTitle)} has been activated.`)}
+    ${infoTable([
+      ['Resource', params.resourceTitle],
+      ['License type', params.licenseName],
+    ])}
+    <div style="margin:20px 0;padding:16px;background:${BRAND_LIGHT};border-radius:8px;border:1px solid rgba(30,58,138,0.15);">
+      <p style="margin:0 0 6px;font-size:11px;font-weight:600;color:${MUTED};text-transform:uppercase;letter-spacing:0.08em;">License key</p>
+      <p style="margin:0;font-size:14px;font-family:monospace;font-weight:700;color:${INK};letter-spacing:0.05em;word-break:break-all;">${esc(params.licenseKey)}</p>
+    </div>
+    ${callout('Keep this key safe. It\'s linked to your purchase and activates your license.')}
+    ${ctaButton('Download files', `${WEB_URL}/licenses`)}
+    ${p('You can always find your license keys and download links in the Licenses section of your portal.')}
+  `)
+  return { subject, html }
+}
+
+// ─── Deliverable submitted (client notification) ──────────────────────────────
+
+export function deliverableSubmittedClient(params: {
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+  orderNumber: string
+  deliverableId: string
+  expertNote?: string | null
+}): { subject: string; html: string } {
+  const subject = `Delivery ready for review — ${params.deliverableNumber}`
+  const html = baseTemplate(`
+    ${h1('Your delivery is ready')}
+    ${p(`Hi ${strong(params.clientName)}, your expert has submitted a delivery for review.`)}
+    ${infoTable([
+      ['Deliverable', params.deliverableNumber],
+      ['Title', params.deliverableTitle],
+      ['Order', params.orderNumber],
+    ])}
+    ${params.expertNote ? callout(`<strong>Note from your expert:</strong><br/>${esc(params.expertNote.slice(0, 300))}`) : ''}
+    ${p('Please review the delivery and either approve it or request a revision with your feedback.')}
+    ${ctaButton('Review delivery', `${WEB_URL}/deliverables/${params.deliverableId}`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Revision requested (expert notification) ─────────────────────────────────
+
+export function revisionRequestedExpert(params: {
+  expertName: string
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+  deliverableId: string
+  feedback?: string | null
+}): { subject: string; html: string } {
+  const subject = `Revision requested — ${params.deliverableNumber}`
+  const html = baseTemplate(`
+    ${h1('Revision requested')}
+    ${p(`Hi ${strong(params.expertName)}, ${strong(params.clientName)} has requested a revision on your delivery.`)}
+    ${infoTable([
+      ['Deliverable', params.deliverableNumber],
+      ['Title', params.deliverableTitle],
+    ])}
+    ${params.feedback ? callout(`<strong>Client feedback:</strong><br/>${esc(params.feedback.slice(0, 400))}`) : ''}
+    ${p('Please review the feedback and submit a revised delivery.')}
+    ${ctaButton('View deliverable', `${WEB_URL}/expert/orders`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Deliverable approved (expert notification) ───────────────────────────────
+
+export function deliverableApprovedExpert(params: {
+  expertName: string
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+}): { subject: string; html: string } {
+  const subject = `Delivery approved — ${params.deliverableNumber}`
+  const html = baseTemplate(`
+    ${h1('Delivery approved')}
+    ${p(`Hi ${strong(params.expertName)}, great news — ${strong(params.clientName)} has approved your delivery.`)}
+    ${infoTable([
+      ['Deliverable', params.deliverableNumber],
+      ['Title', params.deliverableTitle],
+      ['Status', 'Approved'],
+    ])}
+    ${callout('The client is satisfied with the delivery. The deliverable has been marked as approved.')}
+    ${ctaButton('View performance', `${WEB_URL}/expert/performance`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Expert assigned to order ─────────────────────────────────────────────────
+
+export function expertAssigned(params: {
+  expertName: string
+  orderNumber: string
+  serviceTitle: string
+  clientName: string
+  dueDate?: string | null
+  orderId: string
+}): { subject: string; html: string } {
+  const subject = `New order assigned — ${params.orderNumber}`
+  const html = baseTemplate(`
+    ${h1('New order assigned to you')}
+    ${p(`Hi ${strong(params.expertName)}, a new order has been assigned to you.`)}
+    ${infoTable([
+      ['Order', params.orderNumber],
+      ['Service', params.serviceTitle],
+      ['Client', params.clientName],
+      ...(params.dueDate ? [['Due', fmtDate(params.dueDate)] as [string, string]] : []),
+    ])}
+    ${p('Please review the order requirements and begin work. The client is expecting updates through the portal.')}
+    ${ctaButton('View order', `${WEB_URL}/expert/orders`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Client notified order assigned ──────────────────────────────────────────
+
+export function serviceOrderAssignedClient(params: {
+  clientName: string
+  orderNumber: string
+  serviceTitle: string
+  expertName: string
+  orderId: string
+}): { subject: string; html: string } {
+  const subject = `Your order has been assigned — ${params.orderNumber}`
+  const html = baseTemplate(`
+    ${h1('Your order has been assigned')}
+    ${p(`Hi ${strong(params.clientName)}, your order has been assigned to a specialist who will start work shortly.`)}
+    ${infoTable([
+      ['Order', params.orderNumber],
+      ['Service', params.serviceTitle],
+      ['Assigned to', params.expertName],
+    ])}
+    ${callout('You\'ll be notified when your expert starts work and when your first delivery is ready.')}
+    ${ctaButton('Track your order', `${WEB_URL}/orders/${params.orderId}`)}
+  `)
+  return { subject, html }
+}
+
+// ─── Booking rescheduled ──────────────────────────────────────────────────────
+
+export function bookingRescheduledClient(params: {
+  clientName: string
+  serviceTitle: string
+  oldStartsAt: Date
+  newStartsAt: Date
+  durationMinutes: number
+  meetingUrl?: string | null
+  bookingId: string
+}): { subject: string; html: string } {
+  const subject = `Booking rescheduled — ${params.serviceTitle}`
+  const html = baseTemplate(`
+    ${h1('Your booking has been rescheduled')}
+    ${p(`Hi ${strong(params.clientName)}, your booking has been moved to a new time.`)}
+    ${infoTable([
+      ['Session', params.serviceTitle],
+      ['Previous time', fmtDateTime(params.oldStartsAt)],
+      ['New time', fmtDateTime(params.newStartsAt)],
+      ['Duration', `${params.durationMinutes} minutes`],
+      ...(params.meetingUrl ? [['Meeting link', params.meetingUrl] as [string, string]] : []),
+    ])}
+    ${params.meetingUrl
+      ? callout(`Join at the new scheduled time: <a href="${params.meetingUrl}" style="color:${BRAND};font-weight:600;">${esc(params.meetingUrl)}</a>`)
+      : callout('Your meeting link remains the same. Check your email or the portal for details.')}
+    ${ctaButton('View booking', `${WEB_URL}/bookings/${params.bookingId}`)}
+  `)
+  return { subject, html }
+}
+
 // ─── Testimonial request ──────────────────────────────────────────────────────
 
 export function testimonialRequestClient(params: {

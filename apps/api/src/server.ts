@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import express from 'express'
+import helmet from 'helmet'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import rateLimit from 'express-rate-limit'
@@ -9,10 +10,21 @@ import { pool } from './db/client'
 import { wcWebhookHandler } from './modules/woocommerce/woocommerce.webhooks'
 import { stripeWebhookHandler } from './modules/stripe/stripe.webhooks'
 
+// Fail fast if required env vars are absent — catches misconfigured deployments at startup
+const REQUIRED_ENV = ['DATABASE_URL', 'JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'] as const
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) throw new Error(`Missing required env var: ${key}`)
+}
+
 const app = express()
 
 // Trust the first proxy hop — required for correct req.ip behind Railway / Render / Fly
 app.set('trust proxy', 1)
+
+app.use(helmet({
+  crossOriginEmbedderPolicy: false, // relaxed — portal loads external images/fonts
+  contentSecurityPolicy: false,     // configure per route if needed; default blocks inline scripts
+}))
 
 // Parse WEB_URL as a comma-separated list to support apex + www in production
 const allowedOrigins = (process.env.WEB_URL ?? '')
@@ -38,12 +50,12 @@ app.use(
   }),
 )
 
-// Strict limit on auth endpoints — 20 req / 15 min per IP
+// Strict limit on auth endpoints — 5 req / 15 min per IP (brute-force protection)
 app.use(
   '/api/v1/auth',
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 20,
+    max: 5,
     standardHeaders: true,
     legacyHeaders: false,
     message: { error: 'Too many auth attempts, please try again later.' },

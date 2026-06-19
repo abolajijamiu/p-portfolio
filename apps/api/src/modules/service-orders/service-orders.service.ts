@@ -8,11 +8,13 @@ import {
   serviceOrderDeliveries,
   servicePackages,
   services,
+  serviceRequirements,
   users,
 } from '../../db/schema'
+
 import { AppError } from '../../lib/errors'
 import type { AccessTokenPayload } from '../../lib/tokens'
-import { emailServiceOrderPlaced, emailServiceOrderDelivered, emailServiceOrderCompleted } from '../../lib/email'
+import { emailServiceOrderPlaced, emailServiceOrderDelivered, emailServiceOrderCompleted, emailExpertAssigned, emailServiceOrderAssignedClient } from '../../lib/email'
 import { notify } from '../../lib/notify'
 import { getPresignedUploadUrl, getPresignedDownloadUrl } from '../../lib/storage'
 
@@ -37,7 +39,7 @@ function assertOwnerOrAdmin(auth: AccessTokenPayload, clientId: string) {
 
 export async function placeOrder(auth: AccessTokenPayload, packageId: string) {
   const [pkg] = await db
-    .select({ id: servicePackages.id, serviceId: servicePackages.serviceId, priceCents: servicePackages.priceCents, currency: servicePackages.currency })
+    .select({ id: servicePackages.id, serviceId: servicePackages.serviceId, name: servicePackages.name, priceCents: servicePackages.priceCents, currency: servicePackages.currency, revisions: servicePackages.revisions })
     .from(servicePackages)
     .where(and(eq(servicePackages.id, packageId), eq(servicePackages.active, true)))
     .limit(1)
@@ -89,7 +91,7 @@ export async function placeOrder(auth: AccessTokenPayload, packageId: string) {
         clientName: client.name,
         orderNumber,
         serviceTitle: svc.title,
-        packageName: '',
+        packageName: pkg.name,
         priceCents: pkg.priceCents,
         currency: pkg.currency,
       })
@@ -102,12 +104,12 @@ export async function placeOrder(auth: AccessTokenPayload, packageId: string) {
 // ─── Get order detail ─────────────────────────────────────────────────────────
 
 export async function getOrder(auth: AccessTokenPayload, id: string) {
-  const [order] = await db
+  const [row] = await db
     .select({
       order: serviceOrders,
       service: { title: services.title, slug: services.slug, category: services.category },
       pkg: { name: servicePackages.name, deliveryDays: servicePackages.deliveryDays, revisions: servicePackages.revisions },
-      client: { name: users.name, email: users.email },
+      client: { id: users.id, name: users.name, email: users.email },
     })
     .from(serviceOrders)
     .innerJoin(services, eq(serviceOrders.serviceId, services.id))
@@ -116,10 +118,9 @@ export async function getOrder(auth: AccessTokenPayload, id: string) {
     .where(eq(serviceOrders.id, id))
     .limit(1)
 
-  if (!order) throw new AppError('Order not found', 404)
-  assertOwnerOrAdmin(auth, order.order.clientId)
+  if (!row) throw new AppError('Order not found', 404)
+  assertOwnerOrAdmin(auth, row.order.clientId)
 
-  // Mark messages as read for the viewer (fire-and-forget)
   const isAdmin = auth.role === 'admin' || auth.role === 'owner'
   if (isAdmin) {
     db.update(serviceOrderMessages)
@@ -133,7 +134,9 @@ export async function getOrder(auth: AccessTokenPayload, id: string) {
       .then(() => {}).catch(() => {})
   }
 
-  const [messages, milestones, deliveries] = await Promise.all([
+  const expertId = row.order.assignedExpertId
+
+  const [messages, milestones, deliveries, requirements, expertRows] = await Promise.all([
     db
       .select()
       .from(serviceOrderMessages)
@@ -149,9 +152,18 @@ export async function getOrder(auth: AccessTokenPayload, id: string) {
       .from(serviceOrderDeliveries)
       .where(eq(serviceOrderDeliveries.orderId, id))
       .orderBy(desc(serviceOrderDeliveries.createdAt)),
+    db
+      .select({ label: serviceRequirements.label, fieldType: serviceRequirements.fieldType, required: serviceRequirements.required })
+      .from(serviceRequirements)
+      .where(eq(serviceRequirements.serviceId, row.order.serviceId))
+      .orderBy(asc(serviceRequirements.sortOrder)),
+    expertId
+      ? db.select({ name: users.name, avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, expertId)).limit(1)
+      : Promise.resolve([] as { name: string; avatarUrl: string | null }[]),
   ])
 
-  return { ...order, messages, milestones, deliveries }
+  const expert = expertRows[0] ?? null
+  return { ...row, expert, messages, milestones, deliveries, requirements }
 }
 
 // ─── List: client's own orders ────────────────────────────────────────────────
@@ -162,6 +174,7 @@ export async function listMyOrders(auth: AccessTokenPayload) {
       order: serviceOrders,
       serviceTitle: services.title,
       serviceSlug: services.slug,
+      serviceCategory: services.category,
       packageName: servicePackages.name,
     })
     .from(serviceOrders)
@@ -313,6 +326,38 @@ export async function assignOrder(
     metadata: { orderId: id, orderNumber: order.orderNumber },
   }).catch(() => {})
 
+  // Email expert and client
+  Promise.all([
+    db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, expertId)).limit(1),
+    db.select({ name: users.name, email: users.email }).from(users).where(eq(users.id, order.clientId)).limit(1),
+    db.select({ title: services.title }).from(services).where(eq(services.id, order.serviceId)).limit(1),
+  ]).then(([expertRows, clientRows, serviceRows]) => {
+    const expert = expertRows[0]
+    const client = clientRows[0]
+    const serviceTitle = serviceRows[0]?.title ?? 'Your order'
+    if (expert) {
+      emailExpertAssigned({
+        expertEmail: expert.email,
+        expertName: expert.name,
+        orderNumber: order.orderNumber,
+        serviceTitle,
+        clientName: client?.name ?? 'Client',
+        dueDate: dueDate ?? null,
+        orderId: id,
+      }).catch(() => {})
+    }
+    if (client) {
+      emailServiceOrderAssignedClient({
+        clientEmail: client.email,
+        clientName: client.name,
+        orderNumber: order.orderNumber,
+        serviceTitle,
+        expertName: expert?.name ?? 'Our expert',
+        orderId: id,
+      }).catch(() => {})
+    }
+  }).catch(() => {})
+
   return updated
 }
 
@@ -405,6 +450,19 @@ export async function requestRevision(
   if (!order) throw new AppError('Order not found', 404)
   assertOwnerOrAdmin(auth, order.clientId)
   if (order.status !== 'delivered') throw new AppError('Order has not been delivered', 400)
+
+  const [pkg] = await db
+    .select({ revisions: servicePackages.revisions })
+    .from(servicePackages)
+    .where(eq(servicePackages.id, order.packageId))
+    .limit(1)
+
+  if (pkg && order.revisionCount >= pkg.revisions) {
+    throw new AppError(
+      `This package includes ${pkg.revisions} revision${pkg.revisions === 1 ? '' : 's'} and all have been used.`,
+      400,
+    )
+  }
 
   await db
     .update(serviceOrders)
@@ -631,8 +689,9 @@ export async function getOrderUploadUrl(
 
   const isAdmin = ctx.role === 'admin' || ctx.role === 'owner'
   const isExpert = ctx.userId === order.assignedExpertId
+  const isClient = ctx.userId === order.clientId
 
-  if (!isAdmin && !isExpert) throw new AppError('Forbidden', 403)
+  if (!isAdmin && !isExpert && !isClient) throw new AppError('Forbidden', 403)
 
   const parts = name.split('.')
   const ext = parts.length > 1 ? parts.pop()! : ''

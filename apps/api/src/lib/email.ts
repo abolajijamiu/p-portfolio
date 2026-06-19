@@ -1,9 +1,22 @@
 import { Resend } from 'resend'
 import * as tmpl from './email-templates'
 
+if (!process.env.RESEND_API_KEY) {
+  console.warn('RESEND_API_KEY is not set — email delivery is disabled')
+}
+
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 const FROM = `${process.env.EMAIL_FROM_NAME} <${process.env.EMAIL_FROM_ADDRESS}>`
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
 
 async function send(to: string, subject: string, html: string) {
   if (!process.env.RESEND_API_KEY) return
@@ -162,6 +175,7 @@ export async function sendContactEmail(params: {
 
   const subject = `${subjectPrefix} — ${params.name}${params.company ? ` at ${params.company}` : ''}`
 
+  const e = escapeHtml
   await resend.emails.send({
     from: FROM,
     to,
@@ -169,21 +183,167 @@ export async function sendContactEmail(params: {
     subject,
     html: [
       params.inquiryType
-        ? `<p><strong>Inquiry type:</strong> ${params.inquiryType}</p>`
+        ? `<p><strong>Inquiry type:</strong> ${e(params.inquiryType)}</p>`
         : '',
       params.theme
-        ? `<p><strong>Theme:</strong> ${params.theme}${params.intent ? ` (${params.intent})` : ''}</p>`
+        ? `<p><strong>Theme:</strong> ${e(params.theme)}${params.intent ? ` (${e(params.intent)})` : ''}</p>`
         : '',
-      `<p><strong>Name:</strong> ${params.name}</p>`,
-      `<p><strong>Email:</strong> ${params.email}</p>`,
-      params.company ? `<p><strong>Company:</strong> ${params.company}</p>` : '',
-      params.budget ? `<p><strong>Budget:</strong> ${params.budget}</p>` : '',
+      `<p><strong>Name:</strong> ${e(params.name)}</p>`,
+      `<p><strong>Email:</strong> ${e(params.email)}</p>`,
+      params.company ? `<p><strong>Company:</strong> ${e(params.company)}</p>` : '',
+      params.budget ? `<p><strong>Budget:</strong> ${e(params.budget)}</p>` : '',
       `<p><strong>Message:</strong></p>`,
-      `<p style="white-space:pre-wrap">${params.message}</p>`,
+      `<p style="white-space:pre-wrap">${e(params.message)}</p>`,
     ]
       .filter(Boolean)
       .join(''),
   })
+}
+
+// ─── Commerce ─────────────────────────────────────────────────────────────────
+
+export async function emailCommerceOrderConfirmed(params: {
+  to: string
+  name: string
+  orderId: string
+  invoiceNumber?: string
+  totalCents: number
+  currency: string
+  deliverableCount: number
+  items: { name: string; priceCents: number }[]
+}) {
+  const { subject, html } = tmpl.commerceOrderConfirmed({
+    name: params.name,
+    orderId: params.orderId,
+    invoiceNumber: params.invoiceNumber,
+    totalCents: params.totalCents,
+    currency: params.currency,
+    deliverableCount: params.deliverableCount,
+    items: params.items,
+  })
+  await send(params.to, subject, html)
+}
+
+export async function emailInvoiceGenerated(params: {
+  to: string
+  name: string
+  invoiceNumber: string
+  orderId: string
+  totalCents: number
+  currency: string
+  items: { name: string; priceCents: number }[]
+}) {
+  const { subject, html } = tmpl.invoiceGenerated(params)
+  await send(params.to, subject, html)
+}
+
+export async function emailLicenseIssued(params: {
+  to: string
+  name: string
+  resourceTitle: string
+  licenseName: string
+  licenseKey: string
+  purchaseId: string
+}) {
+  const { subject, html } = tmpl.licenseIssued(params)
+  await send(params.to, subject, html)
+}
+
+export async function emailDeliverableSubmitted(params: {
+  clientEmail: string
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+  orderNumber: string
+  deliverableId: string
+  expertNote?: string | null
+}) {
+  const { subject, html } = tmpl.deliverableSubmittedClient({
+    clientName: params.clientName,
+    deliverableTitle: params.deliverableTitle,
+    deliverableNumber: params.deliverableNumber,
+    orderNumber: params.orderNumber,
+    deliverableId: params.deliverableId,
+    expertNote: params.expertNote,
+  })
+  await send(params.clientEmail, subject, html)
+}
+
+export async function emailRevisionRequested(params: {
+  expertEmail: string
+  expertName: string
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+  deliverableId: string
+  feedback?: string | null
+}) {
+  const { subject, html } = tmpl.revisionRequestedExpert({
+    expertName: params.expertName,
+    clientName: params.clientName,
+    deliverableTitle: params.deliverableTitle,
+    deliverableNumber: params.deliverableNumber,
+    deliverableId: params.deliverableId,
+    feedback: params.feedback,
+  })
+  await send(params.expertEmail, subject, html)
+}
+
+export async function emailDeliverableApproved(params: {
+  expertEmail: string
+  expertName: string
+  clientName: string
+  deliverableTitle: string
+  deliverableNumber: string
+}) {
+  const { subject, html } = tmpl.deliverableApprovedExpert(params)
+  await send(params.expertEmail, subject, html)
+}
+
+export async function emailExpertAssigned(params: {
+  expertEmail: string
+  expertName: string
+  orderNumber: string
+  serviceTitle: string
+  clientName: string
+  dueDate?: string | null
+  orderId: string
+}) {
+  const { subject, html } = tmpl.expertAssigned({
+    expertName: params.expertName,
+    orderNumber: params.orderNumber,
+    serviceTitle: params.serviceTitle,
+    clientName: params.clientName,
+    dueDate: params.dueDate,
+    orderId: params.orderId,
+  })
+  await send(params.expertEmail, subject, html)
+}
+
+export async function emailServiceOrderAssignedClient(params: {
+  clientEmail: string
+  clientName: string
+  orderNumber: string
+  serviceTitle: string
+  expertName: string
+  orderId: string
+}) {
+  const { subject, html } = tmpl.serviceOrderAssignedClient(params)
+  await send(params.clientEmail, subject, html)
+}
+
+export async function emailBookingRescheduled(params: {
+  clientEmail: string
+  clientName: string
+  serviceTitle: string
+  oldStartsAt: Date
+  newStartsAt: Date
+  durationMinutes: number
+  meetingUrl?: string | null
+  bookingId: string
+}) {
+  const { subject, html } = tmpl.bookingRescheduledClient(params)
+  await send(params.clientEmail, subject, html)
 }
 
 export async function sendOrderConfirmationEmail(params: {

@@ -108,7 +108,7 @@ async function handleOrderEvent(orgId: string, topic: string, wc: WcOrder): Prom
     )
     await commerceService.triggerOperations(
       orgId,
-      { id: order.id, totalCents: order.totalCents, currency: order.currency },
+      { id: order.id, invoiceNumber: order.invoiceNumber, totalCents: order.totalCents, currency: order.currency },
       { email: customer.email, name: customer.name },
       created,
     )

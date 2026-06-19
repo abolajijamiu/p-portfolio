@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
 import { Skeleton } from '@/components/ui/Skeleton'
-import type { CommerceOrder } from '@/types'
+import type { CommerceOrder, WcWebhookEvent } from '@/types'
 
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-amber-50 text-amber-700',
@@ -19,6 +19,58 @@ function formatMoney(cents: number, currency: string) {
   return new Intl.NumberFormat('en-GB', { style: 'currency', currency }).format(cents / 100)
 }
 
+function WebhookFailures() {
+  const { data: failures, isLoading } = useSWR<WcWebhookEvent[]>('/cms/commerce/webhook-failures')
+
+  if (isLoading) {
+    return (
+      <div className="border border-border rounded-xl overflow-hidden bg-white">
+        <div className="px-5 py-3.5 border-b border-border flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-rose-400 shrink-0" />
+          <h2 className="text-xs font-medium text-muted uppercase tracking-wide">Webhook Failures</h2>
+        </div>
+        <div className="px-5 py-4 space-y-2">
+          {[...Array(2)].map((_, i) => <Skeleton key={i} className="h-4 w-full" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (!failures?.length) return null
+
+  return (
+    <div className="border border-rose-200 rounded-xl overflow-hidden bg-white">
+      <div className="px-5 py-3.5 border-b border-rose-100 flex items-center justify-between bg-rose-50/50">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" />
+          <h2 className="text-xs font-semibold text-rose-800 uppercase tracking-wide">
+            Webhook Failures — {failures.length} unprocessed
+          </h2>
+        </div>
+        <p className="text-[11px] text-rose-600">These webhooks failed to process and need attention.</p>
+      </div>
+      <div className="divide-y divide-border">
+        {failures.map((ev) => (
+          <div key={ev.id} className="px-5 py-3.5 flex items-start justify-between gap-4 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-ink">{ev.topic}</p>
+              {ev.externalId && (
+                <p className="text-[11px] text-muted">WC Order: {ev.externalId}</p>
+              )}
+              {ev.error && (
+                <p className="text-[11px] text-rose-600 mt-0.5 font-mono break-all">{ev.error}</p>
+              )}
+            </div>
+            <p className="text-[11px] text-muted shrink-0">
+              {new Date(ev.createdAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminCommerceOrdersPage() {
   const { data: orders, isLoading } = useSWR<CommerceOrder[]>('/cms/commerce/orders')
 
@@ -28,8 +80,8 @@ export default function AdminCommerceOrdersPage() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="px-4 pt-6 pb-10 md:p-8 max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-4 pt-6 pb-10 md:p-8 max-w-4xl space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold text-ink tracking-tight">Orders</h1>
             <p className="text-sm text-muted mt-0.5">
@@ -44,6 +96,10 @@ export default function AdminCommerceOrdersPage() {
           </Link>
         </div>
 
+        {/* Webhook failures — shown only when there are failures */}
+        <WebhookFailures />
+
+        {/* Orders list */}
         {isLoading ? (
           <div className="divide-y divide-border border border-border rounded-xl overflow-hidden bg-white">
             {[...Array(6)].map((_, i) => (

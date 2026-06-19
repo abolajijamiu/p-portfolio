@@ -44,6 +44,7 @@ export const commerceOrders = pgTable(
     customerId: uuid('customer_id')
       .notNull()
       .references(() => commerceCustomers.id),
+    invoiceNumber: text('invoice_number').unique(),
     status: commerceOrderStatusEnum('status').notNull(),
     totalCents: integer('total_cents').notNull(),
     currency: text('currency').notNull().default('USD'),
@@ -103,6 +104,7 @@ export const productMappings = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     provider: text('provider').notNull(),
     externalProductId: text('external_product_id').notNull(),
+    productName: text('product_name'),
     deliverableTypeId: uuid('deliverable_type_id')
       .notNull()
       .references(() => deliverableTypes.id, { onDelete: 'cascade' }),
@@ -116,6 +118,27 @@ export const productMappings = pgTable(
       t.provider,
       t.externalProductId,
     ),
+  }),
+)
+
+export const commerceEvents = pgTable(
+  'commerce_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    orderId: uuid('order_id')
+      .notNull()
+      .references(() => commerceOrders.id, { onDelete: 'cascade' }),
+    event: text('event').notNull(),
+    status: text('status').notNull().default('ok'),
+    detail: jsonb('detail').$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    orderIdx: index('commerce_events_order_idx').on(t.orderId),
+    createdIdx: index('commerce_events_created_idx').on(t.createdAt),
   }),
 )
 

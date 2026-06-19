@@ -230,7 +230,7 @@ function AdminActions({
         <ActionButton onClick={() => act('payment-received')} busy={busy} label="Mark payment received" color="blue" />
       )}
 
-      {(status === 'payment_received' || status === 'requirements_submitted') && (
+      {(status === 'payment_received' || status === 'requirements_needed' || status === 'requirements_submitted') && (
         <>
           {!showAssign ? (
             <ActionButton onClick={() => setShowAssign(true)} busy={false} label="Assign expert & set due date" color="indigo" />

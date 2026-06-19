@@ -83,6 +83,8 @@ export const deliverableCategoryEnum = pgEnum('deliverable_category', [
   'custom_project',
   'license',
   'service',
+  'consultation',
+  'analytics',
 ])
 
 export const serviceCategoryEnum = pgEnum('service_category', [
@@ -172,4 +174,23 @@ export const supportTicketPriorityEnum = pgEnum('support_ticket_priority', [
   'normal',
   'high',
   'urgent',
+])
+
+export const supportTicketCategoryEnum = pgEnum('support_ticket_category', [
+  'general',
+  'billing',
+  'technical',
+  'orders',
+  'resources',
+  'analytics',
+  'consultations',
+])
+
+export const serviceDeliverableStatusEnum = pgEnum('service_deliverable_status', [
+  'pending',
+  'in_progress',
+  'submitted',
+  'revision_requested',
+  'approved',
+  'completed',
 ])

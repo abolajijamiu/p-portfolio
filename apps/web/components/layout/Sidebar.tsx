@@ -6,6 +6,8 @@ import { useAuth } from '@/lib/auth'
 import { cn, initials } from '@/lib/utils'
 
 const ADMIN_NAV = [
+  { label: 'Assignments', href: '/admin/assignments' },
+  { label: 'Deliverables', href: '/admin/deliverables' },
   { label: 'Users', href: '/admin/users' },
   { label: 'Support', href: '/admin/support' },
   { label: 'Audit Logs', href: '/admin/audit-logs' },
@@ -32,6 +34,7 @@ const ADMIN_NAV = [
 const EXPERT_NAV = [
   { label: 'Dashboard', href: '/expert', exact: true },
   { label: 'My Orders', href: '/expert/orders' },
+  { label: 'Performance', href: '/expert/performance' },
   { label: 'Earnings', href: '/expert/payouts' },
 ]
 
@@ -93,10 +96,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
       {/* Nav */}
       <nav aria-label="Main navigation" className="flex-1 p-3 space-y-0.5 overflow-y-auto">
         <NavLink href="/dashboard" label="Dashboard" exact />
-        <NavLink href="/projects" label="Projects" />
         <NavLink href="/orders" label="Orders" />
+        <NavLink href="/deliverables" label="Deliverables" />
         <NavLink href="/inbox" label="Inbox" />
+        <NavLink href="/analytics" label="Analytics" />
+        <NavLink href="/projects" label="Projects" />
         <NavLink href="/bookings" label="Bookings" />
+        <NavLink href="/licenses" label="Licenses" />
         <NavLink href="/purchases" label="Downloads" />
         <NavLink href="/support" label="Support" />
         <NavLink href="/settings/profile" label="Profile" />
