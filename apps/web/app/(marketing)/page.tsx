@@ -49,11 +49,6 @@ const ANALYTICS_PLATFORMS = [
   'TikTok Ads', 'SEO Tracking', 'Email Marketing', 'Google Business Profile',
 ]
 
-const FEATURED_RESOURCES = [
-  { name: 'Prestige Commerce Theme', type: 'Shopify Theme', price: '$149', desc: 'High-converting Shopify theme for premium D2C brands. Built for speed and trust.', tags: ['Shopify', 'Commerce'], href: '/themes/prestige' },
-  { name: 'AI Prompt Toolkit — Marketing', type: 'Prompt Pack', price: '$29', desc: '500+ GPT-4 prompts for content, ads, emails, and social. Practitioner-tested.', tags: ['AI', 'Marketing'], href: '/resources/prompts/marketing' },
-  { name: 'Analytics Report Template', type: 'Template', price: '$49', desc: 'Monthly client-ready analytics report in Notion + PDF. Covers GA4, Ads, SEO.', tags: ['Analytics', 'Template'], href: '/resources/templates/analytics-report' },
-]
 
 const TESTIMONIALS_STATIC = [
   {
@@ -236,6 +231,9 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Featured services ─────────────────────────────────────────────── */}
+      <FeaturedServicesSection />
 
       {/* ── Recent platform activity ──────────────────────────────────────── */}
       <section className="bg-white border-b border-border">
@@ -609,48 +607,14 @@ export default function HomePage() {
               </h2>
             </div>
             <Link
-              href="/themes"
+              href="/resources"
               className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand-deep transition-colors duration-150 shrink-0"
             >
               Browse all resources <ArrowRightIcon className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {FEATURED_RESOURCES.map(({ name, type, price, desc, tags, href }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex flex-col bg-white border border-border rounded-xl overflow-hidden hover:border-brand/30 hover:shadow-lg hover:shadow-brand/[0.06] transition-all duration-200"
-              >
-                <div className="aspect-[16/10] bg-surface flex items-center justify-center border-b border-border relative">
-                  <PackageIcon className="h-8 w-8 text-muted/30" />
-                  <div className="absolute top-3 right-3">
-                    <span className="text-xs font-bold text-ink bg-white border border-border px-2 py-0.5 rounded-md shadow-sm">
-                      {price}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  <span className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-3">{type}</span>
-                  <h3 className="text-[14px] font-semibold text-ink tracking-tight mb-2 leading-snug">{name}</h3>
-                  <p className="text-xs text-muted leading-relaxed flex-1">{desc}</p>
-                  <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1">
-                      {tags.map((t) => (
-                        <span key={t} className="text-[10px] font-medium text-ink/60 bg-surface px-2 py-0.5 rounded border border-border">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                    <span className="text-xs font-medium text-brand group-hover:text-brand-deep transition-colors">
-                      Get it →
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <FeaturedResourcesSection />
         </div>
       </section>
 
@@ -847,6 +811,203 @@ export default function HomePage() {
 }
 
 // ─── Server components ────────────────────────────────────────────────────────
+
+const SERVICE_CATEGORY_META: Record<string, { label: string; color: string; bg: string }> = {
+  development:  { label: 'Development',    color: 'text-blue-700',    bg: 'bg-blue-50 border-blue-100' },
+  marketing:    { label: 'Marketing',      color: 'text-purple-700',  bg: 'bg-purple-50 border-purple-100' },
+  branding:     { label: 'Branding',       color: 'text-rose-700',    bg: 'bg-rose-50 border-rose-100' },
+  ai_analytics: { label: 'AI & Analytics', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100' },
+  ecommerce:    { label: 'E-commerce',     color: 'text-orange-700',  bg: 'bg-orange-50 border-orange-100' },
+  consulting:   { label: 'Consulting',     color: 'text-sky-700',     bg: 'bg-sky-50 border-sky-100' },
+  technical:    { label: 'Technical',      color: 'text-slate-700',   bg: 'bg-slate-50 border-slate-100' },
+  publishing:   { label: 'Publishing',     color: 'text-indigo-700',  bg: 'bg-indigo-50 border-indigo-100' },
+  premium:      { label: 'Premium',        color: 'text-amber-700',   bg: 'bg-amber-50 border-amber-100' },
+}
+
+async function FeaturedServicesSection() {
+  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+
+  type ServiceItem = {
+    id: string
+    slug: string
+    title: string
+    tagline: string
+    category: string
+    featured: boolean
+    packages: { priceCents: number; deliveryDays: number }[]
+  }
+
+  let services: ServiceItem[] = []
+
+  try {
+    const res = await fetch(`${API}/services/pricing`, { next: { revalidate: 3600 } })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        services = data.filter((s: ServiceItem) => s.featured).slice(0, 3)
+      }
+    }
+  } catch { /* fall through */ }
+
+  if (services.length === 0) return null
+
+  return (
+    <section className="bg-white border-b border-border">
+      <div className="px-5 md:px-10 lg:px-16 py-14 md:py-20 max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <p className="text-[11px] font-semibold text-brand uppercase tracking-[0.18em] mb-3">Most Popular</p>
+            <h2 className="font-display text-[clamp(1.5rem,3vw,2.5rem)] font-bold tracking-tight text-ink leading-[1.1]">
+              Services clients order first.
+            </h2>
+          </div>
+          <Link
+            href="/services"
+            className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:text-brand-deep transition-colors duration-150 shrink-0"
+          >
+            All services <ArrowRightIcon className="h-4 w-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {services.map((s) => {
+            const meta = SERVICE_CATEGORY_META[s.category] ?? { label: s.category, color: 'text-muted', bg: 'bg-surface border-border' }
+            const minPrice = s.packages?.length ? Math.min(...s.packages.map((p) => p.priceCents)) : null
+            const minDays  = s.packages?.length ? Math.min(...s.packages.map((p) => p.deliveryDays)) : null
+
+            return (
+              <Link
+                key={s.id}
+                href={`/services/${s.slug}`}
+                className="group flex flex-col bg-white border border-border rounded-xl p-6 hover:border-brand/30 hover:shadow-lg hover:shadow-brand/[0.06] transition-all duration-200"
+              >
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded border ${meta.bg} ${meta.color}`}>
+                    {meta.label}
+                  </span>
+                  {minPrice !== null && (
+                    <span className="text-xs font-semibold text-ink/70 shrink-0">
+                      From ${(minPrice / 100).toLocaleString()}
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-[15px] font-semibold text-ink tracking-tight mb-2 leading-snug group-hover:text-brand transition-colors duration-150">
+                  {s.title}
+                </h3>
+                <p className="text-sm text-muted leading-relaxed flex-1 mb-5">{s.tagline}</p>
+
+                <div className="flex items-center justify-between pt-4 border-t border-border">
+                  {minDays !== null && (
+                    <span className="text-xs text-muted">From {minDays} days</span>
+                  )}
+                  <span className="text-xs font-semibold text-brand flex items-center gap-1 ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    View packages <ArrowRightIcon className="h-3 w-3" />
+                  </span>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const RESOURCE_CATEGORY_LABEL: Record<string, string> = {
+  design_asset: 'Theme',
+  template:     'Template',
+  guide:        'Guide',
+  tool:         'Tool',
+  starter_kit:  'Starter Kit',
+  plugin:       'Plugin',
+  course:       'Course',
+  font:         'Font',
+}
+
+async function FeaturedResourcesSection() {
+  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api/v1'
+
+  type ResourceItem = {
+    id: string
+    slug: string
+    title: string
+    tagline: string
+    category: string
+    featured: boolean
+    tags: string[]
+    licenses: { priceCents: number }[]
+  }
+
+  let resources: ResourceItem[] = []
+
+  try {
+    const res = await fetch(`${API}/resources`, { next: { revalidate: 3600 } })
+    if (res.ok) {
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        resources = data.filter((r: ResourceItem) => r.featured).slice(0, 3)
+      }
+    }
+  } catch { /* fall through */ }
+
+  if (resources.length === 0) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-sm text-muted">No featured resources yet.</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      {resources.map((r) => {
+        const minPrice = r.licenses?.length
+          ? Math.min(...r.licenses.map((l) => l.priceCents))
+          : null
+        const price = minPrice === null ? null : minPrice === 0 ? 'Free' : `$${(minPrice / 100).toLocaleString()}`
+
+        return (
+          <Link
+            key={r.id}
+            href={`/resources/${r.slug}`}
+            className="group flex flex-col bg-white border border-border rounded-xl overflow-hidden hover:border-brand/30 hover:shadow-lg hover:shadow-brand/[0.06] transition-all duration-200"
+          >
+            <div className="aspect-[16/10] bg-surface flex items-center justify-center border-b border-border relative">
+              <PackageIcon className="h-8 w-8 text-muted/30" />
+              {price && (
+                <div className="absolute top-3 right-3">
+                  <span className="text-xs font-bold text-ink bg-white border border-border px-2 py-0.5 rounded-md shadow-sm">
+                    {price}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div className="p-5 flex flex-col flex-1">
+              <span className="text-[10px] font-semibold text-muted uppercase tracking-wider mb-3">
+                {RESOURCE_CATEGORY_LABEL[r.category] ?? r.category}
+              </span>
+              <h3 className="text-[14px] font-semibold text-ink tracking-tight mb-2 leading-snug">{r.title}</h3>
+              <p className="text-xs text-muted leading-relaxed flex-1">{r.tagline}</p>
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                <div className="flex flex-wrap gap-1">
+                  {r.tags?.slice(0, 2).map((t) => (
+                    <span key={t} className="text-[10px] font-medium text-ink/60 bg-surface px-2 py-0.5 rounded border border-border">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+                <span className="text-xs font-medium text-brand group-hover:text-brand-deep transition-colors">
+                  Get it →
+                </span>
+              </div>
+            </div>
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
 
 type TestimonialItem = { quote: string; author: string; role: string; rating: number }
 

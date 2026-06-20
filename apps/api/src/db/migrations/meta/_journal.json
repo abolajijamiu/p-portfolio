@@ -43,6 +43,13 @@
       "when": 1781750290088,
       "tag": "0005_add_stripe_to_service_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1750377600000,
+      "tag": "0006_commerce_automation",
+      "breakpoints": true
     }
   ]
 }

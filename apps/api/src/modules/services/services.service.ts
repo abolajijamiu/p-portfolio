@@ -83,6 +83,24 @@ export async function listAll(_auth: AccessTokenPayload) {
     .orderBy(asc(services.sortOrder), asc(services.category))
 }
 
+export async function getById(_auth: AccessTokenPayload, id: string) {
+  const [service] = await db
+    .select()
+    .from(services)
+    .where(eq(services.id, id))
+    .limit(1)
+
+  if (!service) throw new AppError('Service not found', 404)
+
+  const [pkgs, faqs, reqs] = await Promise.all([
+    db.select().from(servicePackages).where(eq(servicePackages.serviceId, id)).orderBy(asc(servicePackages.sortOrder)),
+    db.select().from(serviceFaqs).where(eq(serviceFaqs.serviceId, id)).orderBy(asc(serviceFaqs.sortOrder)),
+    db.select().from(serviceRequirements).where(eq(serviceRequirements.serviceId, id)).orderBy(asc(serviceRequirements.sortOrder)),
+  ])
+
+  return { ...service, packages: pkgs, faqs, requirements: reqs }
+}
+
 export async function create(_auth: AccessTokenPayload, data: typeof services.$inferInsert) {
   const [row] = await db.insert(services).values(data).returning()
   return row

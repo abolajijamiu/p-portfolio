@@ -56,6 +56,15 @@ cmsServicesRouter.get('/', ...guard, async (req, res, next) => {
   }
 })
 
+// GET /cms/services/:id
+cmsServicesRouter.get('/:id', ...guard, async (req, res, next) => {
+  try {
+    res.json(await svc.getById(req.auth, req.params.id as string))
+  } catch (err) {
+    next(err)
+  }
+})
+
 // POST /cms/services
 cmsServicesRouter.post('/', ...guard, validate(createServiceSchema), async (req, res, next) => {
   try {

@@ -47,51 +47,15 @@ const CATEGORY_META: Record<string, { label: string; color: string; dot: string 
   premium:      { label: 'Premium',        color: 'text-amber-700',   dot: 'bg-amber-500' },
 }
 
-const STATIC_FALLBACK: ServiceWithPackages[] = [
-  {
-    id: '1', slug: 'shopify-store-development', title: 'Shopify Store Development',
-    tagline: 'Custom Shopify stores built to convert and scale.', category: 'development',
-    packages: [
-      { id: 'p1', name: 'Starter', description: 'Theme customisation + basic setup', priceCents: 49900, currency: 'USD', deliveryDays: 5, revisions: 2, includes: ['Responsive design', 'Up to 3 pages', 'Payment gateway setup', 'Mobile optimised'], sortOrder: 0 },
-      { id: 'p2', name: 'Growth', description: 'Custom theme + integrations', priceCents: 129900, currency: 'USD', deliveryDays: 10, revisions: 3, includes: ['Custom theme design', 'Up to 10 pages', 'App integrations', 'SEO foundations', 'Speed optimisation'], sortOrder: 1 },
-      { id: 'p3', name: 'Enterprise', description: 'Full bespoke build', priceCents: 299900, currency: 'USD', deliveryDays: 21, revisions: 5, includes: ['Fully custom design', 'Unlimited pages', 'Custom app development', 'Analytics setup', 'Post-launch support'], sortOrder: 2 },
-    ],
-  },
-  {
-    id: '2', slug: 'seo-strategy-and-execution', title: 'SEO Strategy & Execution',
-    tagline: 'Organic growth that compounds month over month.', category: 'marketing',
-    packages: [
-      { id: 'p4', name: 'Audit', description: 'Technical SEO audit + roadmap', priceCents: 39900, currency: 'USD', deliveryDays: 5, revisions: 1, includes: ['Full site crawl', 'Core Web Vitals report', 'Keyword gap analysis', 'Priority recommendations'], sortOrder: 0 },
-      { id: 'p5', name: 'Boost', description: 'On-page + content optimisation', priceCents: 89900, currency: 'USD', deliveryDays: 14, revisions: 2, includes: ['Audit included', '10 page optimisations', '5 content pieces', 'Link building plan'], sortOrder: 1 },
-    ],
-  },
-  {
-    id: '3', slug: 'brand-identity-design', title: 'Brand Identity Design',
-    tagline: 'Identity systems that command trust and recognition.', category: 'branding',
-    packages: [
-      { id: 'p6', name: 'Essentials', description: 'Logo + colour + typography', priceCents: 59900, currency: 'USD', deliveryDays: 7, revisions: 3, includes: ['Logo (3 variants)', 'Colour palette', 'Typography system', 'Brand guidelines PDF'], sortOrder: 0 },
-      { id: 'p7', name: 'Full Identity', description: 'Complete brand system', priceCents: 149900, currency: 'USD', deliveryDays: 14, revisions: 5, includes: ['Everything in Essentials', 'Brand voice guide', 'Social media kit', 'Business card design', 'Email signature'], sortOrder: 1 },
-    ],
-  },
-  {
-    id: '4', slug: 'analytics-reporting-service', title: 'Analytics Reporting',
-    tagline: 'Data that drives decisions, delivered on a schedule.', category: 'ai_analytics',
-    packages: [
-      { id: 'p8', name: 'Setup', description: 'GA4 + dashboard setup', priceCents: 49900, currency: 'USD', deliveryDays: 5, revisions: 2, includes: ['GA4 configuration', 'Custom dashboard', 'Goal tracking', 'Monthly report template'], sortOrder: 0 },
-      { id: 'p9', name: 'Monthly', description: 'Ongoing analytics retainer', priceCents: 79900, currency: 'USD', deliveryDays: 30, revisions: 2, includes: ['Monthly deep-dive report', 'Anomaly alerts', 'Recommendations', 'Slack updates'], sortOrder: 1 },
-    ],
-  },
-]
-
 async function fetchPricing(): Promise<ServiceWithPackages[]> {
   try {
     const res = await fetch(`${API}/services/pricing`, { next: { revalidate: 3600 } })
     if (res.ok) {
       const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) return data
+      if (Array.isArray(data)) return data
     }
   } catch { /* fall through */ }
-  return STATIC_FALLBACK
+  return []
 }
 
 function fmtPrice(cents: number) {

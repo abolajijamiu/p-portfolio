@@ -36,23 +36,15 @@ const CATEGORY_META: Record<string, { label: string; color: string; bg: string }
   premium:      { label: 'Premium',      color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-100' },
 }
 
-const STATIC_FALLBACK: Service[] = [
-  { id: '1', slug: 'shopify-store-development', title: 'Shopify Store Development', tagline: 'Custom Shopify stores built to convert and scale.', category: 'development', featured: true },
-  { id: '2', slug: 'seo-strategy-and-execution', title: 'SEO Strategy & Execution', tagline: 'Organic growth that compounds month over month.', category: 'marketing', featured: true },
-  { id: '3', slug: 'brand-identity-design', title: 'Brand Identity Design', tagline: 'Identity systems that command trust and recognition.', category: 'branding', featured: true },
-  { id: '4', slug: 'analytics-reporting-service', title: 'Analytics Reporting Service', tagline: 'Data that drives decisions, delivered on a schedule.', category: 'ai_analytics', featured: true },
-  { id: '5', slug: 'ecommerce-conversion-optimisation', title: 'E-commerce Conversion Optimisation', tagline: 'More revenue from the traffic you already have.', category: 'ecommerce', featured: false },
-]
-
 async function fetchServices(): Promise<Service[]> {
   try {
-    const res = await fetch(`${API}/services`, { next: { revalidate: 3600 } })
+    const res = await fetch(`${API}/services/pricing`, { next: { revalidate: 3600 } })
     if (res.ok) {
       const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) return data
+      if (Array.isArray(data)) return data
     }
   } catch { /* fall through */ }
-  return STATIC_FALLBACK
+  return []
 }
 
 function priceFrom(service: Service) {
@@ -119,6 +111,11 @@ export default async function ServicesPage() {
       {/* By category */}
       <section className="bg-white">
         <div className="px-5 md:px-10 lg:px-16 py-14 md:py-20 max-w-7xl mx-auto space-y-16">
+          {Object.keys(byCategory).length === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-sm text-muted">No services available yet. Check back soon.</p>
+            </div>
+          )}
           {Object.entries(byCategory).map(([cat, catServices]) => {
             const meta = CATEGORY_META[cat] ?? { label: cat, color: 'text-muted', bg: 'bg-surface border-border' }
             return (

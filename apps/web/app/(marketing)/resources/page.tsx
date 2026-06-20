@@ -39,23 +39,15 @@ const CATEGORY_META: Record<string, { label: string; color: string; bg: string }
   font:         { label: 'Font',         color: 'text-slate-700',  bg: 'bg-slate-50 border-slate-100' },
 }
 
-const STATIC_FALLBACK: Resource[] = [
-  { id: '1', slug: 'nextjs-ecommerce-starter-kit', title: 'Next.js E-commerce Starter Kit', tagline: 'Production-ready Next.js 15 storefront with cart, auth, and Stripe.', category: 'starter_kit', featured: true, tags: ['Next.js', 'TypeScript', 'Stripe'], licenses: [{ id: 'a', name: 'Personal', priceCents: 7900, sortOrder: 0 }, { id: 'b', name: 'Commercial', priceCents: 14900, sortOrder: 1 }] },
-  { id: '2', slug: 'brand-identity-design-system', title: 'Brand Identity Design System', tagline: 'Complete Figma design system for building cohesive brand identities.', category: 'design_asset', featured: true, tags: ['Figma', 'Brand'], licenses: [{ id: 'c', name: 'Personal', priceCents: 4900, sortOrder: 0 }, { id: 'd', name: 'Commercial', priceCents: 9900, sortOrder: 1 }] },
-  { id: '3', slug: 'seo-audit-strategy-workbook', title: 'SEO Audit & Strategy Workbook', tagline: 'A structured 90-day SEO playbook used by our in-house team.', category: 'guide', featured: false, tags: ['SEO', 'Strategy'], licenses: [{ id: 'e', name: 'Standard', priceCents: 2900, sortOrder: 0 }] },
-  { id: '4', slug: 'analytics-dashboard-templates', title: 'Analytics Dashboard Templates', tagline: 'Ready-to-use Looker Studio & Google Sheets dashboard templates.', category: 'template', featured: true, tags: ['Looker Studio', 'Analytics'], licenses: [{ id: 'f', name: 'Personal', priceCents: 5900, sortOrder: 0 }] },
-  { id: '5', slug: 'shopify-conversion-checklist', title: 'Shopify CRO Checklist', tagline: '127-point conversion optimisation checklist, fully annotated.', category: 'guide', featured: false, tags: ['Shopify', 'CRO'], licenses: [{ id: 'g', name: 'Standard', priceCents: 1900, sortOrder: 0 }] },
-]
-
 async function fetchResources(): Promise<Resource[]> {
   try {
     const res = await fetch(`${API}/resources`, { next: { revalidate: 3600 } })
     if (res.ok) {
       const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) return data
+      if (Array.isArray(data)) return data
     }
   } catch { /* fall through */ }
-  return STATIC_FALLBACK
+  return []
 }
 
 function priceFrom(resource: Resource) {
@@ -105,6 +97,11 @@ export default async function ResourcesPage() {
       {/* By category */}
       <section className="bg-white">
         <div className="px-5 md:px-10 lg:px-16 py-14 md:py-20 max-w-7xl mx-auto space-y-16">
+          {Object.keys(byCategory).length === 0 && (
+            <div className="py-20 text-center">
+              <p className="text-sm text-muted">No resources available yet. Check back soon.</p>
+            </div>
+          )}
           {Object.entries(byCategory).map(([cat, items]) => {
             const meta = CATEGORY_META[cat] ?? { label: cat, color: 'text-muted', bg: 'bg-surface border-border' }
             return (
