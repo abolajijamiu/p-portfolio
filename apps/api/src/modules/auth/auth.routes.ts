@@ -8,6 +8,7 @@ import { verifyPendingTotpToken } from '../../lib/tokens'
 import { AppError } from '../../lib/errors'
 import {
   acceptInviteSchema,
+  clientRegisterSchema,
   forgotPasswordSchema,
   inviteSchema,
   loginSchema,
@@ -31,10 +32,21 @@ function setRefreshCookie(res: Response, token: string) {
   res.cookie(COOKIE_NAME, token, cookieOptions)
 }
 
-// POST /api/v1/auth/register
+// POST /api/v1/auth/register  (owner — creates a new org)
 authRouter.post('/register', validate(registerSchema), async (req, res, next) => {
   try {
     const { accessToken, refreshToken, user } = await authService.register(req.body)
+    setRefreshCookie(res, refreshToken)
+    res.status(201).json({ accessToken, user })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /api/v1/auth/client-register  (client — joins the platform org)
+authRouter.post('/client-register', validate(clientRegisterSchema), async (req, res, next) => {
+  try {
+    const { accessToken, refreshToken, user } = await authService.clientRegister(req.body)
     setRefreshCookie(res, refreshToken)
     res.status(201).json({ accessToken, user })
   } catch (err) {

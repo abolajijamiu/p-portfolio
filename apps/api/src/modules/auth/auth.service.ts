@@ -9,6 +9,7 @@ import { generateInviteToken, generateRefreshToken, signAccessToken, signPending
 import type { AccessTokenPayload } from '../../lib/tokens'
 import type {
   AcceptInviteInput,
+  ClientRegisterInput,
   InviteInput,
   LoginInput,
   RegisterInput,
@@ -57,6 +58,42 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   })
 
   return issueSession({ sub: user.id, orgId: org.id, role: 'owner' }, user)
+}
+
+// ─── clientRegister ───────────────────────────────────────────────────────────
+// Creates a user and joins the platform org as a client.
+// The platform org is identified by COMMERCE_ORG_ID — it must be set in env.
+
+export async function clientRegister(input: ClientRegisterInput): Promise<AuthResult> {
+  const orgId = process.env.COMMERCE_ORG_ID
+  if (!orgId) throw new AppError('Client registration is not available', 503)
+
+  const existing = await db.query.users.findFirst({
+    where: eq(users.email, input.email.toLowerCase().trim()),
+    columns: { id: true },
+  })
+  if (existing) throw new AppError('An account with this email already exists', 409)
+
+  const org = await db.query.organizations.findFirst({
+    where: eq(organizations.id, orgId),
+    columns: { id: true },
+  })
+  if (!org) throw new AppError('Client registration is not available', 503)
+
+  const passwordHash = await hashPassword(input.password)
+
+  const user = await db.transaction(async (tx) => {
+    const [created] = await tx
+      .insert(users)
+      .values({ name: input.name.trim(), email: input.email.toLowerCase().trim(), passwordHash, acceptedAt: new Date() })
+      .returning({ id: users.id, email: users.email, name: users.name })
+
+    await tx.insert(memberships).values({ userId: created.id, orgId, role: 'client' })
+
+    return created
+  })
+
+  return issueSession({ sub: user.id, orgId, role: 'client' }, user)
 }
 
 // ─── login ───────────────────────────────────────────────────────────────────

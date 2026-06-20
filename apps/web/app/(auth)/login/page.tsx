@@ -195,7 +195,13 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted">
+        <p className="mt-4 text-center text-xs text-muted">
+          New client?{' '}
+          <Link href="/register" className="text-ink underline underline-offset-2 hover:text-muted transition-[color] duration-150">
+            Create an account
+          </Link>
+        </p>
+        <p className="mt-3 text-center text-xs text-muted">
           Having trouble?{' '}
           <a href="mailto:hello@deempiretech.com" className="text-ink underline underline-offset-2 hover:text-muted transition-[color] duration-150">
             Contact support
